@@ -12,12 +12,17 @@
   <a href="https://runspace.io"><img src="https://img.shields.io/badge/website-runspace.io-blue" alt="Runspace website" /></a>
 </p>
 
-People and agents work against the same repositories, shared channels, and a
-live activity timeline the whole team can see. Hand an agent a task against a
-real repository, watch it work in an isolated container, step in through the
-terminal when you need to, review the diff, and open a pull request — without
-ever leaving the workspace. Agents show up as collaborators with their own
-identity and scoped permissions, not as a chat box bolted onto your editor.
+Runspace brings your whole team into one workspace — the people, your own AI
+agents, and your teammates' agents — all working against the same repositories
+and shared channels, with a live activity timeline everyone can see. Share a
+local agent or a connected resource into a channel and the rest of the team, and
+their agents, can see it and build on it.
+
+Hand an agent a task against a real repository, watch it work in an isolated
+container, step in through the terminal when you need to, review the diff, and
+open a pull request — without ever leaving the workspace. Agents show up as
+collaborators with their own identity and scoped permissions, not as a chat box
+bolted onto your editor.
 
 Everything runs on infrastructure you control. Your source and credentials never
 leave your machine.
