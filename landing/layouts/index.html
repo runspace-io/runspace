@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="{{ site.Language.LanguageCode }}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Runspace connects engineering discussion, private agent work, and shared resources without collapsing their boundaries."
+    />
+    <meta name="theme-color" content="#131316" />
+    <title>{{ site.Title }}</title>
+    <link rel="icon" href="/brand/runspace-icon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wdth,wght@75..100,400..700&family=Manrope:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    {{ $style := resources.Get "css/site.css" | minify | fingerprint }}
+    <link
+      rel="stylesheet"
+      href="{{ $style.RelPermalink }}"
+      integrity="{{ $style.Data.Integrity }}"
+    />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Runspace home">
+        <img src="/brand/runspace-wordmark.svg" alt="Runspace" width="157" height="36" />
+      </a>
+
+      <nav class="desktop-nav" aria-label="Primary navigation">
+        <a href="#product">Product</a>
+        <a href="#boundaries">Boundaries</a>
+        <a href="#workflow">Workflow</a>
+      </nav>
+
+      <a class="header-cta" href="mailto:hi@wirestaq.com?subject=Runspace%20pilot">
+        Request a pilot
+        <span aria-hidden="true">↗</span>
+      </a>
+
+      <button
+        class="menu-button"
+        type="button"
+        data-menu-button
+        aria-expanded="false"
+        aria-controls="mobile-menu"
+      >
+        <span></span>
+        <span></span>
+        <span class="sr-only">Open navigation</span>
+      </button>
+
+      <nav class="mobile-nav" id="mobile-menu" data-mobile-nav aria-label="Mobile navigation">
+        <a href="#product">Product</a>
+        <a href="#boundaries">Boundaries</a>
+        <a href="#workflow">Workflow</a>
+        <a href="mailto:hi@wirestaq.com?subject=Runspace%20pilot">Request a pilot ↗</a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="overline">Shared engineering context for humans and agents</p>
+          <h1>
+  <span class="hero-headline-fragment">Your team’s context.</span>
+  <span class="hero-headline-fragment">Your agents.</span>
+  <span class="hero-headline-fragment">Connected your way.</span>
+</h1>
+          <p class="hero-intro">
+            Runspace brings discussion, resources, and shared results into one workspace—while
+            private agent work, credentials, and local paths stay with their owner.
+          </p>
+          <div class="hero-actions">
+            <a class="primary-button" href="mailto:hi@wirestaq.com?subject=Runspace%20pilot">
+              Request a pilot
+              <span aria-hidden="true">↗</span>
+            </a>
+            <a class="secondary-link" href="#product">See the workspace <span>↓</span></a>
+          </div>
+        </div>
+
+        <aside class="hero-model" aria-label="Runspace operating model">
+          <p>THE RUNSPACE MODEL</p>
+          <ol>
+            <li>
+              <span>01</span>
+              <div>
+                <strong>Shared channel</strong>
+                <small>People, decisions, resources, published work</small>
+              </div>
+            </li>
+            <li>
+              <span>02</span>
+              <div>
+                <strong>Private agent work</strong>
+                <small>Owner device, local context, native credentials</small>
+              </div>
+            </li>
+            <li>
+              <span>03</span>
+              <div>
+                <strong>Deliberate bridge</strong>
+                <small>Share a task or result when it is ready</small>
+              </div>
+            </li>
+          </ol>
+        </aside>
+
+        <div class="assurance-strip" aria-label="Product principles">
+          <span>Private by default</span>
+          <span>Resources stay at the source</span>
+          <span>Team authority stays scoped</span>
+        </div>
+      </section>
+
+      <section class="product-section" id="product" aria-labelledby="product-title">
+        <div class="section-heading">
+          <p class="section-number">01 / PRODUCT</p>
+          <div>
+            <h2 id="product-title">One channel for context. A clear boundary for work.</h2>
+            <p>
+              A channel holds the shared discussion and connected resources. Agent chats run
+              privately on the owner’s device until someone chooses what the team should see.
+            </p>
+          </div>
+        </div>
+
+        <div
+          class="product-frame"
+          aria-label="Runspace workflow showing shared context and private agent work"
+        >
+          <header class="product-topbar">
+            <div class="product-brand">
+              <img src="/brand/runspace-icon.svg" alt="" width="20" height="20" />
+              <strong>Runspace</strong>
+            </div>
+            <div class="workspace-name"><i></i> Platform engineering / release</div>
+            <span>3 members</span>
+          </header>
+
+          <div class="product-layout">
+            <aside class="context-rail">
+              <p>CHANNEL CONTEXT</p>
+              <div class="context-item is-active">
+                <span>Repository</span>
+                <strong>runspace/api</strong>
+                <small>Local Git · main</small>
+              </div>
+              <div class="context-item">
+                <span>Database</span>
+                <strong>Incidents</strong>
+                <small>PostgreSQL · read only</small>
+              </div>
+              <div class="context-item">
+                <span>Provider</span>
+                <strong>GitHub</strong>
+                <small>Repositories + PRs</small>
+              </div>
+              <div class="context-note">
+                <span>Resource graph</span>
+                <strong>Shared by reference</strong>
+              </div>
+            </aside>
+
+            <section class="conversation" aria-label="Workspace activity">
+              <header>
+                <div>
+                  <span>SHARED CHANNEL</span>
+                  <h3>#release</h3>
+                </div>
+                <span class="run-status">Team visible</span>
+              </header>
+
+              <div class="message human-message">
+                <span class="avatar">NH</span>
+                <div>
+                  <p class="message-meta"><strong>You</strong><time>09:41</time></p>
+                  <p>We need a migration-readiness pass before Thursday’s release.</p>
+                </div>
+              </div>
+
+              <div class="message agent-message">
+                <span class="avatar agent-avatar">A</span>
+                <div>
+                  <p class="message-meta"><strong>Runspace</strong><time>09:44</time></p>
+                  <p>
+                    Nahid started a private agent chat. Activity is visible; the transcript remains
+                    private.
+                  </p>
+                </div>
+              </div>
+
+              <div class="approval-panel">
+                <header>
+                  <div>
+                    <span class="approval-dot"></span>
+                    <div>
+                      <small>SHARED RESULT</small><strong>Migration readiness report</strong>
+                    </div>
+                  </div>
+                  <span>Published by Nahid</span>
+                </header>
+                <dl>
+                  <div>
+                    <dt>Changes</dt>
+                    <dd>2 files modified</dd>
+                  </div>
+                  <div>
+                    <dt>Validation</dt>
+                    <dd>14 tests passed</dd>
+                  </div>
+                  <div>
+                    <dt>References</dt>
+                    <dd>Diff · test report · branch</dd>
+                  </div>
+                </dl>
+                <div class="approval-actions">
+                  <button type="button" tabindex="-1">Open shared result</button>
+                  <span>Only this result crossed into the channel</span>
+                </div>
+              </div>
+            </section>
+
+            <aside class="result-rail">
+              <header><span>PRIVATE AGENT CHAT</span><strong>Owner device</strong></header>
+              <div class="result-summary">
+                <span class="result-check">A</span>
+                <div><strong>Migration readiness</strong><small>Codex · ready</small></div>
+              </div>
+              <dl>
+                <div>
+                  <dt>Transcript</dt>
+                  <dd>Private</dd>
+                </div>
+                <div>
+                  <dt>Execution</dt>
+                  <dd>Local</dd>
+                </div>
+                <div>
+                  <dt>Visibility</dt>
+                  <dd>Owner</dd>
+                </div>
+              </dl>
+              <div class="changed-files">
+                <p>STAYS ON THIS DEVICE</p>
+                <span><i>•</i> Prompts + raw context</span>
+                <span><i>•</i> Paths + credentials</span>
+              </div>
+              <button type="button" tabindex="-1">Open private chat <span>→</span></button>
+            </aside>
+          </div>
+        </div>
+
+        <div class="product-caption">
+          <span>01</span>
+          <p>The team aligns in a channel with connected context.</p>
+          <span>02</span>
+          <p>An owner works privately with an agent on an explicit resource.</p>
+          <span>03</span>
+          <p>Only the useful task or result is published back to the team.</p>
+        </div>
+      </section>
+
+      <section class="safeguards" id="boundaries" aria-labelledby="boundaries-title">
+        <div class="section-heading">
+          <p class="section-number">02 / BOUNDARIES</p>
+          <div>
+            <h2 id="boundaries-title">Connected does not mean centralized.</h2>
+            <p>
+              Runspace coordinates access to systems that already own your code, data, and agent
+              sessions. It does not need to absorb every secret or transcript.
+            </p>
+          </div>
+        </div>
+
+        <div class="safeguard-list">
+          <article>
+            <span>CHANNELS</span>
+            <h3>Shared context stays readable.</h3>
+            <p>
+              Discussion, decisions, connected resources, tasks, and published artifacts remain
+              available to the workspace.
+            </p>
+          </article>
+          <article>
+            <span>OWNER DEVICE</span>
+            <h3>Private work stays private.</h3>
+            <p>
+              Agent prompts, raw transcripts, local paths, terminal output, and native credentials
+              remain with the person running the work.
+            </p>
+          </article>
+          <article>
+            <span>RESOURCE GRAPH</span>
+            <h3>Systems stay connected by reference.</h3>
+            <p>
+              Teams and permitted agents discover resources and provenance without copying the
+              underlying provider data into Runspace.
+            </p>
+          </article>
+        </div>
+
+        <div class="architecture-note">
+          <div>
+            <p>CHAT-SCOPED AUTHORITY</p>
+            <h3>Share control of the work—not blanket access to a computer.</h3>
+          </div>
+          <ul>
+            <li><span></span>Viewer · see task and artifacts</li>
+            <li><span></span>Contributor · add task input</li>
+            <li><span></span>Operator · control task state</li>
+            <li><span></span>Approver · resolve access requests</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="example-run" id="workflow" aria-labelledby="example-title">
+        <div class="section-heading">
+          <p class="section-number">03 / WORKFLOW</p>
+          <div>
+            <h2 id="example-title">Work privately. Publish deliberately. Act together.</h2>
+            <p>
+              The channel keeps the durable team record without turning every conversation into a
+              model prompt or every private session into shared noise.
+            </p>
+          </div>
+        </div>
+
+        <div class="run-ledger">
+          <div class="ledger-head">
+            <span>MIGRATION READINESS</span>
+            <span>#release</span>
+            <strong>Ready for review</strong>
+          </div>
+          <ol>
+            <li>
+              <time>09:41</time>
+              <span class="ledger-marker"></span>
+              <div>
+                <strong>Team frames the work</strong>
+                <p>The channel holds the decision, repository, and relevant system context.</p>
+              </div>
+              <small>CHANNEL</small>
+            </li>
+            <li>
+              <time>09:44</time>
+              <span class="ledger-marker"></span>
+              <div>
+                <strong>Owner starts a private agent chat</strong>
+                <p>The agent works against an explicit resource on the owner’s device.</p>
+              </div>
+              <small>PRIVATE</small>
+            </li>
+            <li class="is-approved">
+              <time>09:51</time>
+              <span class="ledger-marker"></span>
+              <div>
+                <strong>Useful output is shared</strong>
+                <p>A concise result and reviewable references cross into the channel.</p>
+              </div>
+              <small>PUBLISHED</small>
+            </li>
+            <li>
+              <time>09:55</time>
+              <span class="ledger-marker"></span>
+              <div>
+                <strong>The team reviews and continues</strong>
+                <p>People inspect the diff, discuss the result, and choose the next action.</p>
+              </div>
+              <small>TEAM</small>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="pilot-cta" aria-labelledby="pilot-title">
+        <p>BRING A REAL WORKFLOW</p>
+        <div>
+          <h2 id="pilot-title">Connect the context your team already works across.</h2>
+          <p>
+            We’re working with early engineering teams that want agent collaboration without
+            surrendering ownership of their systems, credentials, or private work.
+          </p>
+          <a class="primary-button" href="mailto:hi@wirestaq.com?subject=Runspace%20pilot">
+            Request a pilot
+            <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <a class="brand" href="/" aria-label="Runspace home">
+        <img src="/brand/runspace-wordmark.svg" alt="Runspace" width="157" height="36" />
+      </a>
+      <p>Shared context. Owner-controlled execution.</p>
+      <nav aria-label="Legal">
+        <a href="https://wirestaq.com/privacy">Privacy</a>
+        <a href="https://wirestaq.com/terms">Terms</a>
+        <a href="mailto:hi@wirestaq.com">Contact</a>
+      </nav>
+      <small>© {{ now.Year }} Wirestaq LLC</small>
+    </footer>
+
+    {{ $script := resources.Get "js/site.js" | minify | fingerprint }}
+    <script
+      src="{{ $script.RelPermalink }}"
+      integrity="{{ $script.Data.Integrity }}"
+      defer
+    ></script>
+  </body>
+</html>

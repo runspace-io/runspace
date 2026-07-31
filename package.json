@@ -1,0 +1,25 @@
+{
+  "name": "runspace",
+  "private": true,
+  "packageManager": "pnpm@10.30.3",
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm --filter web build",
+    "lint": "pnpm --filter web lint",
+    "typecheck": "pnpm --filter web typecheck",
+    "test": "pnpm --filter web test",
+    "test:e2e": "playwright test",
+    "review:screenshots": "node scripts/capture-design-review.mjs",
+    "format:check": "prettier --check .",
+    "format": "prettier --write .",
+    "quality:files": "node scripts/check-file-size.mjs",
+    "quality:web": "pnpm format:check && pnpm quality:files && pnpm lint && pnpm typecheck && pnpm test && pnpm --filter web build",
+    "go:quality": "go test ./... && go vet ./... && staticcheck ./... && golangci-lint run ./...",
+    "quality": "pnpm quality:web && pnpm go:quality",
+    "quality:e2e": "pnpm test:e2e -- --project=chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.0",
+    "prettier": "^3.6.2"
+  }
+}

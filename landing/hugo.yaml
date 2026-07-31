@@ -1,0 +1,16 @@
+baseURL: https://runspace.io/
+languageCode: en-us
+title: Runspace | Shared engineering context for humans and agents
+disableKinds:
+  - taxonomy
+  - term
+module:
+  mounts:
+    - source: layouts
+      target: layouts
+    - source: static
+      target: static
+    - source: assets
+      target: assets
+    - source: ../apps/web/public/brand
+      target: static/brand

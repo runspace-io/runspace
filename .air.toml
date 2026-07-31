@@ -1,0 +1,19 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+cmd = "go build -o ./tmp/gateway ./cmd/gateway"
+bin = "./tmp/gateway"
+include_ext = ["go"]
+exclude_dir = ["apps", "docs", "e2e", "scripts", "test-results", "tmp", "node_modules", ".git"]
+delay = 500
+poll = true
+poll_interval = 500
+stop_on_error = true
+kill_delay = 500
+
+[log]
+time = true
+
+[misc]
+clean_on_exit = true

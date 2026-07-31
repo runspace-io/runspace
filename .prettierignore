@@ -1,0 +1,9 @@
+.next
+node_modules
+coverage
+dist
+go.sum
+test-results
+tmp
+Runspace-*.zip
+.env.example

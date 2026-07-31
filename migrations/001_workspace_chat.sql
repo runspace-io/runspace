@@ -1,0 +1,17 @@
+CREATE TABLE IF NOT EXISTS workspaces (id text PRIMARY KEY, slug text NOT NULL UNIQUE, name text NOT NULL, created_by text NOT NULL, created_at timestamptz NOT NULL, updated_at timestamptz NOT NULL);
+CREATE TABLE IF NOT EXISTS workspace_members (workspace_id text NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE, user_id text NOT NULL, role text NOT NULL, created_at timestamptz NOT NULL, PRIMARY KEY(workspace_id,user_id));
+CREATE TABLE IF NOT EXISTS channels (id text PRIMARY KEY, workspace_id text NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE, name text NOT NULL, created_at timestamptz NOT NULL);
+CREATE TABLE IF NOT EXISTS messages (id text PRIMARY KEY, channel_id text NOT NULL REFERENCES channels(id) ON DELETE CASCADE, author_id text NOT NULL, body text NOT NULL, created_at timestamptz NOT NULL);
+CREATE TABLE IF NOT EXISTS repositories (id text PRIMARY KEY, workspace_id text NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE, provider text NOT NULL, full_name text NOT NULL, clone_url text NOT NULL, default_branch text NOT NULL, created_by text NOT NULL, created_at timestamptz NOT NULL);
+CREATE TABLE IF NOT EXISTS threads (id text PRIMARY KEY, workspace_id text NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE, title text NOT NULL, created_by text NOT NULL, created_at timestamptz NOT NULL);
+CREATE TABLE IF NOT EXISTS thread_messages (id text PRIMARY KEY, thread_id text NOT NULL REFERENCES threads(id) ON DELETE CASCADE, actor_id text NOT NULL, actor_type text NOT NULL, body text NOT NULL, created_at timestamptz NOT NULL);
+CREATE TABLE IF NOT EXISTS resource_graph_nodes (id text PRIMARY KEY, workspace_id text NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE, kind text NOT NULL, type text NOT NULL, title text NOT NULL, summary text NOT NULL DEFAULT '', external_ref text NOT NULL DEFAULT '', owner_id text NOT NULL, metadata jsonb NOT NULL DEFAULT '{}'::jsonb, created_at timestamptz NOT NULL, updated_at timestamptz NOT NULL);
+CREATE INDEX IF NOT EXISTS resource_graph_nodes_workspace_kind ON resource_graph_nodes(workspace_id,kind,updated_at DESC);
+CREATE INDEX IF NOT EXISTS resource_graph_nodes_metadata ON resource_graph_nodes USING gin(metadata);
+CREATE TABLE IF NOT EXISTS resource_graph_edges (id text PRIMARY KEY, workspace_id text NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE, from_id text NOT NULL REFERENCES resource_graph_nodes(id) ON DELETE CASCADE, to_id text NOT NULL REFERENCES resource_graph_nodes(id) ON DELETE CASCADE, relation text NOT NULL, created_by text NOT NULL, metadata jsonb NOT NULL DEFAULT '{}'::jsonb, created_at timestamptz NOT NULL);
+CREATE INDEX IF NOT EXISTS resource_graph_edges_from ON resource_graph_edges(workspace_id,from_id,relation);
+CREATE INDEX IF NOT EXISTS resource_graph_edges_to ON resource_graph_edges(workspace_id,to_id,relation);
+INSERT INTO resource_graph_nodes (id,workspace_id,kind,type,title,owner_id,metadata,created_at,updated_at)
+SELECT 'resource:'||id,workspace_id,'resource',provider,full_name,created_by,jsonb_build_object('entity_id',id,'provider',provider),created_at,created_at FROM repositories ON CONFLICT (id) DO NOTHING;
+INSERT INTO resource_graph_nodes (id,workspace_id,kind,type,title,owner_id,metadata,created_at,updated_at)
+SELECT 'discussion:'||id,workspace_id,'discussion','thread',title,created_by,jsonb_build_object('entity_id',id,'thread_id',id,'channel_id',COALESCE(channel_id,'')),created_at,created_at FROM threads ON CONFLICT (id) DO NOTHING;

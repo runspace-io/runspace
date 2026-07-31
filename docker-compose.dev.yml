@@ -1,0 +1,46 @@
+name: runspace-dev
+
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.gateway.dev
+    command: ['air', '-c', '.air.toml']
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_USER_ID: admin
+    volumes:
+      - .:/src
+      - go-build-cache:/root/go
+      - repository-data:/var/lib/runspace/repositories
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web.dev
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_USER_ID: admin
+      NEXT_PUBLIC_API_URL: http://localhost:3000/gateway
+      NEXT_PUBLIC_WS_API_URL: http://localhost:3000/gateway
+      WATCHPACK_POLLING: 'true'
+      NEXT_TELEMETRY_DISABLED: '1'
+      CI: 'true'
+    command:
+      [
+        'sh',
+        '-c',
+        'pnpm install --frozen-lockfile && exec pnpm --filter web dev --hostname 0.0.0.0',
+      ]
+    volumes:
+      - .:/app
+      - web-node-modules:/app/node_modules
+      - web-app-node-modules:/app/apps/web/node_modules
+      - web-next-cache:/app/apps/web/.next
+
+volumes:
+  go-build-cache:
+  web-node-modules:
+  web-app-node-modules:
+  web-next-cache:

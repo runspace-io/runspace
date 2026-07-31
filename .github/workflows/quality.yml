@@ -1,0 +1,52 @@
+name: quality
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.30.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm quality:files
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+
+  go:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.x'
+          cache: true
+      - name: Check Go formatting
+        shell: bash
+        run: |
+          files="$(gofmt -l .)"
+          if [[ -n "${files}" ]]; then
+            echo "The following Go files are not gofmt-formatted:"
+            echo "${files}"
+            exit 1
+          fi
+      - run: go test ./...
+      - run: go vet ./...
+      - uses: dominikh/staticcheck-action@v1.3.1
+        with:
+          version: '2025.1.1'
+          install-go: false
+      - uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.4
