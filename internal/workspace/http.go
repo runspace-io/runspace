@@ -13,7 +13,7 @@ import (
 
 // Handler exposes the workspace service over the versioned REST API. The
 // authenticated user is supplied by the auth middleware through X-User-ID in
-// this MVP; production middleware should set the same request context value.
+// production middleware should set the same request context value.
 type Handler struct{ service Service }
 
 type contextKey struct{}

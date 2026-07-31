@@ -1,30 +1,15 @@
 # Runspace
 
-An open-source engineering workspace where humans and AI agents collaborate on a
-Git repository through chat, terminal, files, diffs, and pull requests.
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
+[![Website](https://img.shields.io/badge/website-runspace.io-blue)](https://runspace.io)
 
-This repository contains the tested MVP vertical slices and their implementation
-contracts. The adapters are intentionally small so additional agent runtimes,
-Git providers, and persistence implementations can be added without changing
-the UI or event model.
+AI agents shouldn't feel like detached chatbots. They should sit beside you in
+the same workspace — reading the repository, running commands, streaming their
+work live, and letting you intervene when needed.
 
-## Documentation
-
-- [MVP documentation index](docs/README.md)
-- [Product specification](docs/mvp/PRODUCT_SPEC.md)
-- [System architecture](docs/mvp/ARCHITECTURE.md)
-- [Event model](docs/mvp/EVENT_MODEL.md)
-- [Data, API, and realtime contracts](docs/mvp/DATA_API_REALTIME.md)
-- [Security, operations, and testing](docs/mvp/OPERATIONS.md)
-- [Feature implementation guides](docs/mvp/features/README.md)
-- [Design brief](.design/mvp-engineering-workspace/DESIGN_BRIEF.md)
-- [Ordered build checklist](.design/mvp-engineering-workspace/TASKS.md)
-
-## MVP outcome
-
-A developer can authenticate with GitHub, attach a repository, start an agent
-run, collaborate through a shared timeline, observe the run live, inspect its
-changes, and open a pull request without leaving the workspace.
+Runspace gives every agent its own sandboxed environment while keeping you in
+the loop through a shared realtime timeline, terminal, diffs, and pull requests.
+It's open source and runs on your own infrastructure.
 
 ## Run locally with Docker Compose
 
@@ -127,8 +112,7 @@ bounded, read-only tree/file endpoints.
 The browser uses ChatScope primitives for the event-driven timeline, Monaco for
 code viewing, and xterm.js for the Docker-backed terminal. The Compose gateway
 mounts the Docker socket for local development; production deployments should
-move terminal execution behind a dedicated executor boundary. Deployment
-orchestration and OpenTelemetry exporters remain follow-on slices.
+move terminal execution behind a dedicated executor boundary. Deployment orchestration and OpenTelemetry exporters are on the roadmap.
 
 Channels support per-channel secrets through
 `PUT /api/v1/channels/{channelID}/secrets/{name}`. Secret values are stored
