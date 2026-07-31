@@ -14,10 +14,6 @@ its own sandboxed environment while keeping you in the loop through a shared
 realtime timeline, terminal, diffs, and pull requests — all on your own
 infrastructure.
 
-<p align="center">
-  <em>Screenshot coming soon</em>
-</p>
-
 ---
 
 ## Features
