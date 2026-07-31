@@ -97,13 +97,13 @@ func (s *Service) postgresSchema(
 	if err != nil {
 		return nil, err
 	}
-	defer database.Close()
+	defer func() { _ = database.Close() }()
 	const statement = `SELECT table_schema,table_name,table_type FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog','information_schema') ORDER BY table_schema,table_name LIMIT 500`
 	rows, err := database.QueryContext(ctx, statement)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	matches := make([]resourcegraph.CapabilityMatch, 0)
 	for rows.Next() {
 		var schema, table, kind string

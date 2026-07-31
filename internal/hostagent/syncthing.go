@@ -70,7 +70,7 @@ func StartSyncthing(ctx context.Context) (*SyncthingRuntime, error) {
 		}
 	}
 	_ = command.Process.Kill()
-	return nil, errors.New("Syncthing did not become ready within 20 seconds")
+	return nil, errors.New("timed out waiting for Syncthing to become ready within 20 seconds")
 }
 
 func syncStateDir() (string, error) {

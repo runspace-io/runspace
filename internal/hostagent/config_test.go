@@ -27,7 +27,7 @@ func TestLocalResourcesAreUserScoped(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	if response.StatusCode != http.StatusNotFound {
 		t.Fatalf("another user accessed local resource: %d", response.StatusCode)
 	}

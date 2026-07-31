@@ -261,11 +261,12 @@ func writeJSON(writer http.ResponseWriter, status int, value any) {
 
 func writeError(writer http.ResponseWriter, err error) {
 	status := http.StatusInternalServerError
-	if errors.Is(err, ErrUnauthorized) {
+	switch {
+	case errors.Is(err, ErrUnauthorized):
 		status = http.StatusUnauthorized
-	} else if errors.Is(err, ErrInvalidInput) {
+	case errors.Is(err, ErrInvalidInput):
 		status = http.StatusBadRequest
-	} else if errors.Is(err, ErrTaskUnavailable) {
+	case errors.Is(err, ErrTaskUnavailable):
 		status = http.StatusNotFound
 	}
 	writeJSON(writer, status, map[string]string{"error": err.Error()})

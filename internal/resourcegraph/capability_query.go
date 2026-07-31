@@ -106,7 +106,7 @@ func (q *HostCapabilityQuerier) do(request *http.Request) (any, error) {
 	if err != nil {
 		return nil, fmt.Errorf("resource owner host is unavailable: %w", err)
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	payload, err := io.ReadAll(io.LimitReader(response.Body, 1<<20))
 	if err != nil {
 		return nil, err

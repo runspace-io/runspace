@@ -59,6 +59,7 @@ func (s *Server) promptAgent(writer http.ResponseWriter, request *http.Request) 
 		writeError(writer, http.StatusBadRequest, "prompt and thread are required")
 		return
 	}
+	//nolint:contextcheck // the ACP session is long-lived and intentionally outlives this request
 	session, err := s.localAgentSession(userID, agentID, body.ResourceID, body.ThreadID, body.TaskID)
 	if err != nil {
 		writeError(writer, http.StatusBadRequest, err.Error())

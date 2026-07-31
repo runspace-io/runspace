@@ -27,11 +27,14 @@ func TestHostTerminalRunsInsideApprovedFolder(t *testing.T) {
 	endpoint := "ws" + strings.TrimPrefix(httpServer.URL, "http") +
 		"/v1/terminals/repository-1?user_id=admin&level=" + level
 	headers := http.Header{"Origin": []string{"http://localhost:3000"}}
-	connection, _, err := websocket.DefaultDialer.Dial(endpoint, headers)
+	connection, dialResponse, err := websocket.DefaultDialer.Dial(endpoint, headers)
+	if dialResponse != nil {
+		defer func() { _ = dialResponse.Body.Close() }()
+	}
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer connection.Close()
+	defer func() { _ = connection.Close() }()
 	command := "echo HOST_TERMINAL_OK\n"
 	if runtime.GOOS == "windows" {
 		command = "Write-Output HOST_TERMINAL_OK\n"

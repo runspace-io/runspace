@@ -50,7 +50,7 @@ func TestApprovedRepositoryFilesystemIsLazyAndBounded(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	var tree struct {
 		Entries []struct {
 			Path string `json:"path"`
@@ -72,7 +72,7 @@ func TestApprovedRepositoryFilesystemIsLazyAndBounded(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer fileResponse.Body.Close()
+	defer func() { _ = fileResponse.Body.Close() }()
 	var file struct {
 		Content string `json:"content"`
 	}
@@ -89,7 +89,7 @@ func TestApprovedRepositoryFilesystemIsLazyAndBounded(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer traversal.Body.Close()
+	defer func() { _ = traversal.Body.Close() }()
 	if traversal.StatusCode != http.StatusBadRequest {
 		t.Fatalf("traversal status=%d", traversal.StatusCode)
 	}

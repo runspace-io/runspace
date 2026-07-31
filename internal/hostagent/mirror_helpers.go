@@ -93,7 +93,7 @@ func (s *Server) gateway(ctx context.Context, endpoint, userID string, body any,
 	if err != nil {
 		return err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
 		message, _ := io.ReadAll(io.LimitReader(response.Body, 4096))
 		var apiError struct {

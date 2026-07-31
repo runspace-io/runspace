@@ -72,20 +72,20 @@ func relayMCPMessage(
 	if err != nil {
 		return nil, false, err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	notification := len(envelope.ID) == 0 || string(envelope.ID) == "null"
 	body, err := io.ReadAll(io.LimitReader(response.Body, maxMCPMessageBytes))
 	if err != nil {
 		return nil, notification, err
 	}
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		return nil, notification, fmt.Errorf("Runspace MCP returned %s", response.Status)
+		return nil, notification, fmt.Errorf("unexpected status from Runspace MCP: %s", response.Status)
 	}
 	if notification {
 		return nil, true, nil
 	}
 	if len(bytes.TrimSpace(body)) == 0 {
-		return nil, false, errors.New("Runspace MCP returned an empty response")
+		return nil, false, errors.New("empty response from Runspace MCP")
 	}
 	return body, false, nil
 }

@@ -113,7 +113,7 @@ func (s *Service) providerHealth(
 		if err != nil {
 			return err
 		}
-		defer database.Close()
+		defer func() { _ = database.Close() }()
 		return database.PingContext(ctx)
 	default:
 		return ErrInvalid
@@ -187,7 +187,7 @@ func (s *Service) authorizedGET(
 	if err != nil {
 		return err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
 		_, _ = io.Copy(io.Discard, io.LimitReader(response.Body, maxProviderBody))
 		return fmt.Errorf("provider returned status %d", response.StatusCode)

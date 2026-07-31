@@ -60,6 +60,7 @@ func (s *Server) InspectRepository(ctx context.Context, requestedPath string) (R
 	}
 	topLevel, err := s.git(ctx, path, "rev-parse", "--show-toplevel")
 	if err != nil || !samePath(path, topLevel) {
+		//nolint:nilerr // a non-repository path is still connectable as a plain folder, not an error
 		return RepositoryStatus{Path: path, CanConnect: true}, nil
 	}
 	origin, _ := s.git(ctx, path, "remote", "get-url", "origin")

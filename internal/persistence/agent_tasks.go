@@ -35,7 +35,14 @@ func (s *Store) ListAgentTasks(
 		return nil, err
 	}
 	defer func() { _ = rows.Close() }()
-	return scanAgentTasks(rows)
+	tasks, err := scanAgentTasks(rows)
+	if err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return tasks, nil
 }
 
 func (s *Store) GetAgentTaskAccess(

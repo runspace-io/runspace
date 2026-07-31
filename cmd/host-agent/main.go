@@ -20,17 +20,22 @@ func main() {
 		os.Exit(runMCPProxy(os.Args[2:]))
 	}
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	if err := run(logger); err != nil {
+		logger.Error("host agent stopped", "error", err)
+		os.Exit(1)
+	}
+}
+
+func run(logger *slog.Logger) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	server, err := hostagent.NewServer(nil)
 	if err != nil {
-		logger.Error("initialize host agent", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("initialize host agent: %w", err)
 	}
 	if err := server.EnableApprovalPersistence(); err != nil {
-		logger.Error("load approved host folders", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("load approved host folders: %w", err)
 	}
 	go server.RunPresence(ctx, 15*time.Second)
 	httpServer := &http.Server{
@@ -45,13 +50,14 @@ func main() {
 		<-ctx.Done()
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
+		//nolint:contextcheck // shutdown must not derive from the already-cancelled signal context
 		_ = httpServer.Shutdown(shutdownCtx)
 	}()
 	logger.Info("Runspace host agent listening", "address", "http://127.0.0.1:7799")
 	if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		logger.Error("host agent stopped", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("serve host agent: %w", err)
 	}
+	return nil
 }
 
 func runMCPProxy(args []string) int {

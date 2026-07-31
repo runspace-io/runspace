@@ -54,7 +54,7 @@ func (s *Server) openTerminal(writer http.ResponseWriter, request *http.Request)
 	if err != nil {
 		return
 	}
-	defer connection.Close()
+	defer func() { _ = connection.Close() }()
 	runHostShell(request.Context(), connection, path)
 }
 
