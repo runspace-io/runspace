@@ -9,9 +9,11 @@
 
 ---
 
-AI agents should work beside you, not chat from a distance. Runspace gives every
-agent a sandboxed environment. You watch the work happen live through a shared
-timeline, terminal, diffs, and pull requests. All on your own infrastructure.
+Runspace is collaborative intelligence for software engineering. Not an AI that
+replaces you, and not a chatbot you ping from the sidelines. You and the agent
+share a realtime workspace — terminal, diffs, pull requests, and a live timeline
+where you see every decision as it happens. You bring intent. The agent brings
+speed. Together you ship.
 
 ---
 
