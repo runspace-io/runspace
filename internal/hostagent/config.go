@@ -26,7 +26,7 @@ type LocalUserConfig struct {
 	Resources    map[string]LocalResourceBinding    `json:"resources"`
 	Capabilities map[string]LocalCapabilityResource `json:"capability_resources"`
 	Agents       map[string]LocalAgentPreference    `json:"agents"`
-	Sessions     map[string]LocalACPSession          `json:"acp_sessions"`
+	Sessions     map[string]LocalACPSession         `json:"acp_sessions"`
 }
 
 type LocalResourceBinding struct {
