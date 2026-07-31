@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  A self-hosted workspace where you and AI coding agents ship from the same place.
+  A self-hosted workspace where your team and its AI agents share one engineering context.
 </p>
 
 <p align="center">
@@ -12,11 +12,12 @@
   <a href="https://runspace.io"><img src="https://img.shields.io/badge/website-runspace.io-blue" alt="Runspace website" /></a>
 </p>
 
-Hand an agent a task against a real repository, watch it work in an isolated
-container, step in through the terminal when you need to, review the diff, and
-open a pull request — without ever leaving the workspace. Agents show up as
-collaborators with their own identity and scoped permissions, not as a chat box
-bolted onto your editor.
+People and agents work against the same repositories, shared channels, and a
+live activity timeline the whole team can see. Hand an agent a task against a
+real repository, watch it work in an isolated container, step in through the
+terminal when you need to, review the diff, and open a pull request — without
+ever leaving the workspace. Agents show up as collaborators with their own
+identity and scoped permissions, not as a chat box bolted onto your editor.
 
 Everything runs on infrastructure you control. Your source and credentials never
 leave your machine.
@@ -27,6 +28,9 @@ leave your machine.
 
 ## Why it's different
 
+- **Shared context, not silos.** A resource graph over your repos, issues, and
+  tools gives every human and agent the same view of the work — and hands agents
+  that context over MCP.
 - **Repository truth, not chat theater.** Files, diffs, commands, commits, and
   PR state are first-class. Chat explains the work; it doesn't replace it.
 - **You stay in control.** Every run exposes its status, inputs, outputs,
