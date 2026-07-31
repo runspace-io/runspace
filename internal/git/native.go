@@ -100,7 +100,13 @@ func (p Provider) Commit(ctx context.Context, repository, message string) (strin
 	if _, err := p.runner.Run(ctx, repository, "add", "--all"); err != nil {
 		return "", err
 	}
-	return p.runner.Run(ctx, repository, "commit", "-m", message)
+	// Carry an explicit identity so commits succeed in run containers and CI,
+	// which have no ambient user.name/user.email configured. The -c flags apply
+	// to this invocation only and never write repository or global config.
+	return p.runner.Run(ctx, repository,
+		"-c", "user.name=Runspace Agent",
+		"-c", "user.email=agent@runspace.io",
+		"commit", "-m", message)
 }
 
 func (p Provider) Push(ctx context.Context, repository, remote, branch string) error {
