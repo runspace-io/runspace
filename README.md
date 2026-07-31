@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/runspace-io/runspace/main/apps/web/public/brand/runspace-wordmark.svg" alt="Runspace" width="400" />
+  <img src="https://raw.githubusercontent.com/runspace-io/runspace/main/apps/web/public/brand/runspace-logo.svg" alt="Runspace" width="520" />
 </p>
 
 <p align="center">
