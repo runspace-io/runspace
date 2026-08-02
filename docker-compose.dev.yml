@@ -1,5 +1,6 @@
-name: runspace-dev
-
+# Deliberately no `name:` override. The dev overlay is a variant of the same
+# stack, not a second one: sharing the project name means `stack:dev` replaces
+# the running containers instead of racing them for ports 3000/8080/5432.
 services:
   gateway:
     build:

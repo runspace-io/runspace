@@ -26,6 +26,24 @@ jobs:
 
   go:
     runs-on: ubuntu-latest
+    # The persistence tests skip themselves without DATABASE_URL, so without a
+    # database CI would silently cover none of the SQL.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: forge
+          POSTGRES_USER: forge
+          POSTGRES_PASSWORD: forge-local-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U forge -d forge"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://forge:forge-local-password@127.0.0.1:5432/forge?sslmode=disable
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
@@ -41,7 +59,9 @@ jobs:
             echo "${files}"
             exit 1
           fi
-      - run: go test ./...
+      # -race guards the goroutine hand-off between a parked turn and the
+      # request that returned before it.
+      - run: go test -race ./...
       - run: go vet ./...
       - uses: dominikh/staticcheck-action@v1.4.1
         with:

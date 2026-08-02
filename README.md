@@ -56,9 +56,12 @@ You need [Git](https://git-scm.com/) and Docker with the Compose v2 plugin
 ```bash
 git clone https://github.com/runspace-io/runspace.git
 cd runspace
-cp .env.example .env
-docker compose up -d --build
+pnpm stack:up
 ```
+
+`stack:up` writes `.env` from `.env.example` on first run, then builds and
+starts everything. Plain `docker compose up -d --build` still works if you
+would rather not go through pnpm.
 
 Open [http://localhost:3000](http://localhost:3000) and sign in with
 `admin` / `admin`.
@@ -72,7 +75,7 @@ To confirm the stack is healthy:
 
 ```bash
 docker compose ps
-./scripts/smoke-test.sh   # smoke-test.ps1 on PowerShell
+pnpm stack:smoke
 ```
 
 ## Plug in a real agent
@@ -86,7 +89,7 @@ To give an agent access to approved local folders and installed tools, run the
 host agent alongside the stack:
 
 ```bash
-go run ./cmd/host-agent
+pnpm host-agent
 ```
 
 It binds to `127.0.0.1:7799` only. You approve folders one at a time from the
@@ -118,7 +121,9 @@ and **Docker** for run isolation.
 Hot-reload everything in containers:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+pnpm stack:dev     # same project as stack:up, so it replaces those containers
+pnpm stack:logs    # follow output
+pnpm stack:down    # stop
 ```
 
 Prefer local tooling? Install Node.js 22, pnpm 10.30.3, and Go 1.25:
@@ -134,7 +139,11 @@ Before you push:
 ```bash
 pnpm quality       # Prettier, lint, typecheck, tests, and web build
 go test ./...      # Go tests
+pnpm test:e2e      # Playwright; starts the dev stack for you
 ```
+
+`pnpm run` lists every script. The end-to-end suite needs the host agent
+running (`pnpm host-agent`) for the tests that exercise local resources.
 
 `pnpm quality` also runs `staticcheck` and `golangci-lint`, and the same gates
 run in CI on every push and pull request. Deeper design docs — architecture,
