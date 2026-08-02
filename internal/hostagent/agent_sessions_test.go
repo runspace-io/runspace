@@ -32,6 +32,9 @@ func (fake *fakeLocalACP) Prompt(_ context.Context, sessionID, _ string) error {
 	return nil
 }
 func (fake *fakeLocalACP) Cancel(context.Context, string) error { return nil }
+func (fake *fakeLocalACP) AnswerPermission(context.Context, string, string) error {
+	return nil
+}
 func (fake *fakeLocalACP) Notifications() <-chan acpruntime.ACPNotification {
 	return fake.notices
 }

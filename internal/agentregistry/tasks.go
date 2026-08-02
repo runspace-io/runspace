@@ -262,7 +262,7 @@ func contains(items []string, target string) bool {
 
 func normalizeTaskStatus(status string) string {
 	switch strings.TrimSpace(status) {
-	case "running", "completed", "failed", "cancelled":
+	case "running", "waiting_approval", "completed", "failed", "cancelled":
 		return status
 	default:
 		return "ready"

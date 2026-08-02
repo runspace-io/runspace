@@ -44,6 +44,23 @@ func (executor *HostTaskExecutor) Prompt(
 	return response.Outputs, err
 }
 
+// Answer resolves a permission question on the owner's Host Agent. An empty
+// optionID cancels, matching what the agent sees on a timeout.
+func (executor *HostTaskExecutor) Answer(
+	ctx context.Context, task AgentTask, questionID, optionID string,
+) error {
+	return executor.request(
+		ctx,
+		"/v1/agents/"+url.PathEscape(task.AgentID)+"/session/answer",
+		task.OwnerID,
+		map[string]string{
+			"resource_id": task.ResourceID, "thread_id": task.ThreadID, "task_id": task.ID,
+			"question_id": questionID, "option_id": optionID,
+		},
+		nil,
+	)
+}
+
 func (executor *HostTaskExecutor) Cancel(ctx context.Context, task AgentTask) error {
 	return executor.request(
 		ctx,

@@ -28,7 +28,11 @@ func (h *Handler) RegisterRoutes(router chi.Router) {
 	router.Post("/agent-tasks/{taskID}/input", h.inputTask)
 	router.Post("/agent-tasks/{taskID}/cancel", h.cancelTask)
 	router.Post("/agent-tasks/{taskID}/artifacts", h.shareTaskArtifact)
+	router.Get("/agent-tasks/{taskID}/messages", h.listTaskMessages)
+	router.Get("/agent-tasks/{taskID}/questions", h.listTaskQuestions)
+	router.Post("/agent-tasks/{taskID}/questions/{questionID}/answer", h.answerTaskQuestion)
 	router.Post("/users/me/agents/presence", h.presence)
+	router.Post("/users/me/agent-tasks/{taskID}/events", h.recordTaskStream)
 }
 
 func (h *Handler) presence(writer http.ResponseWriter, request *http.Request) {
@@ -268,6 +272,8 @@ func writeError(writer http.ResponseWriter, err error) {
 		status = http.StatusBadRequest
 	case errors.Is(err, ErrTaskUnavailable):
 		status = http.StatusNotFound
+	case errors.Is(err, ErrQuestionResolved):
+		status = http.StatusConflict
 	}
 	writeJSON(writer, status, map[string]string{"error": err.Error()})
 }

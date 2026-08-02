@@ -98,19 +98,9 @@ func buildAPI(workspaceService *workspace.MemoryService, chatService *collaborat
 	chatService.SetGraphProjector(graph)
 	workspace.NewHandler(workspaceService).RegisterRoutes(api)
 	collaboration.NewHandler(chatService).RegisterRoutes(api)
-	agentRegistry := agentregistry.New(time.Now, workspaceService)
-	if databaseStore != nil {
-		agentRegistry.SetStore(databaseStore)
-		agentRegistry.SetTaskGrantStore(databaseStore)
-		agentRegistry.SetTaskStore(databaseStore)
-	}
-	agentRegistry.SetMessageWriter(chatService)
-	agentRegistry.SetGraphProjector(graph)
-	hostAgentURL := strings.TrimSpace(os.Getenv("HOST_AGENT_URL"))
-	if hostAgentURL == "" {
-		hostAgentURL = "http://host.docker.internal:7799"
-	}
-	agentRegistry.SetTaskExecutor(agentregistry.NewHostTaskExecutor(hostAgentURL))
+	agentRegistry, hostAgentURL := newAgentRegistry(
+		workspaceService, chatService, graph, databaseStore, publisher,
+	)
 	agentregistry.NewHandler(agentRegistry).RegisterRoutes(api)
 	graphHandler := resourcegraph.NewHandler(graph, chatService)
 	graphHandler.SetAgentMessageWriter(agentRegistry)

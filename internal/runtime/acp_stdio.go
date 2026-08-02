@@ -64,10 +64,11 @@ func NewStdioACPFactoryWithOptions(options StdioOptions) ACPFactory {
 		}
 		client := &stdioACP{
 			stdin: stdin, pending: make(map[int64]chan rpcResponse),
-			notifications:  make(chan ACPNotification, 32),
-			configOptions:  make(map[string][]sessionConfigOption),
-			permissionMode: options.PermissionMode,
-			mcpServers:     cloneMCPServers(options.MCPServers),
+			notifications:      make(chan ACPNotification, 32),
+			configOptions:      make(map[string][]sessionConfigOption),
+			pendingPermissions: make(map[string]pendingPermission),
+			permissionMode:     options.PermissionMode,
+			mcpServers:         cloneMCPServers(options.MCPServers),
 		}
 		go client.read(stdout)
 		return client, nil
@@ -84,14 +85,16 @@ type rpcError struct {
 }
 
 type stdioACP struct {
-	stdin          io.WriteCloser
-	mu             sync.Mutex
-	nextID         int64
-	pending        map[int64]chan rpcResponse
-	notifications  chan ACPNotification
-	configOptions  map[string][]sessionConfigOption
-	permissionMode string
-	mcpServers     []MCPServer
+	stdin              io.WriteCloser
+	mu                 sync.Mutex
+	nextID             int64
+	questionSeq        int64
+	pending            map[int64]chan rpcResponse
+	pendingPermissions map[string]pendingPermission
+	notifications      chan ACPNotification
+	configOptions      map[string][]sessionConfigOption
+	permissionMode     string
+	mcpServers         []MCPServer
 }
 
 type sessionConfigOption struct {
@@ -208,7 +211,10 @@ func (c *stdioACP) Cancel(ctx context.Context, sessionID string) error {
 
 func (c *stdioACP) Notifications() <-chan ACPNotification { return c.notifications }
 
-func (c *stdioACP) Close() error { return c.stdin.Close() }
+func (c *stdioACP) Close() error {
+	c.cancelPendingPermissions()
+	return c.stdin.Close()
+}
 
 func (c *stdioACP) read(stdout io.Reader) {
 	scanner := bufio.NewScanner(stdout)
@@ -218,15 +224,7 @@ func (c *stdioACP) read(stdout io.Reader) {
 			Result json.RawMessage `json:"result"`
 			Error  *rpcError       `json:"error"`
 			Method string          `json:"method"`
-			Params struct {
-				SessionID string `json:"sessionId"`
-				Update    struct {
-					Kind    string `json:"sessionUpdate"`
-					Content struct {
-						Text string `json:"text"`
-					} `json:"content"`
-				} `json:"update"`
-			} `json:"params"`
+			Params json.RawMessage `json:"params"`
 		}
 		if err := json.Unmarshal(scanner.Bytes(), &message); err != nil {
 			continue
@@ -245,46 +243,38 @@ func (c *stdioACP) read(stdout io.Reader) {
 			}
 			continue
 		}
-		if message.Method == "session/update" && message.Params.SessionID != "" {
-			select {
-			case c.notifications <- ACPNotification{SessionID: message.Params.SessionID, Kind: message.Params.Update.Kind, Text: message.Params.Update.Content.Text}:
-			default:
-			}
+		if message.Method == "session/update" {
+			c.notify(message.Params)
 		}
 	}
 	close(c.notifications)
 }
 
-func (c *stdioACP) respondPermission(id int64, raw []byte) {
-	var request struct {
-		Params struct {
-			Options []struct {
-				OptionID string `json:"optionId"`
-				Kind     string `json:"kind"`
-			} `json:"options"`
-		} `json:"params"`
+// notify forwards one session/update to consumers. The raw params ride along so
+// callers keep structured detail that the flattened text drops. The send never
+// blocks: a stalled consumer must not wedge the ACP reader loop.
+func (c *stdioACP) notify(params json.RawMessage) {
+	var update struct {
+		SessionID string `json:"sessionId"`
+		Update    struct {
+			Kind    string `json:"sessionUpdate"`
+			Content struct {
+				Text string `json:"text"`
+			} `json:"content"`
+		} `json:"update"`
 	}
-	_ = json.Unmarshal(raw, &request)
-	outcome := map[string]any{"outcome": "cancelled"}
-	if c.permissionMode == "yolo" {
-		for _, preferredKind := range []string{"allow_always", "allow_once"} {
-			for _, option := range request.Params.Options {
-				if option.Kind == preferredKind {
-					outcome = map[string]any{"outcome": "selected", "optionId": option.OptionID}
-					break
-				}
-			}
-			if outcome["outcome"] == "selected" {
-				break
-			}
-		}
+	if json.Unmarshal(params, &update) != nil || update.SessionID == "" {
+		return
 	}
-	payload, _ := json.Marshal(map[string]any{
-		"jsonrpc": "2.0", "id": id, "result": map[string]any{"outcome": outcome},
-	})
-	c.mu.Lock()
-	_, _ = c.stdin.Write(append(payload, '\n'))
-	c.mu.Unlock()
+	select {
+	case c.notifications <- ACPNotification{
+		SessionID: update.SessionID,
+		Kind:      update.Update.Kind,
+		Text:      update.Update.Content.Text,
+		Payload:   append(json.RawMessage(nil), params...),
+	}:
+	default:
+	}
 }
 
 var _ ACPClient = (*stdioACP)(nil)

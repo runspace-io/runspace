@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -24,6 +25,9 @@ type agentSession struct {
 	agentID    string
 	resourceID string
 	threadID   string
+	// cancelled records an operator stop so the turn reports "cancelled" rather
+	// than the "failed" the aborted prompt would otherwise produce.
+	cancelled atomic.Bool
 }
 
 type agentClientFactory func(context.Context, acpruntime.StdioOptions) (acpruntime.ACPClient, error)
@@ -65,30 +69,29 @@ func (s *Server) promptAgent(writer http.ResponseWriter, request *http.Request) 
 		writeError(writer, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := s.appendSessionMessage(session.publicID, "user", body.Prompt, "running"); err != nil {
+	prompted, err := s.appendSessionMessage(session.publicID, "user", body.Prompt, "running")
+	if err != nil {
 		writeError(writer, http.StatusInternalServerError, err.Error())
 		return
 	}
-	outputs, err := promptSession(request.Context(), session, body.Prompt)
+	_ = s.pushTaskUpdate(request.Context(), session, []LocalSessionMessage{prompted}, "running")
+	// streamTurn already persisted and forwarded each chunk, and owns the
+	// terminal status; the response only replays what the turn produced so the
+	// caller's synchronous contract stays intact.
+	outcome, err := s.streamTurn(request.Context(), session, body.Prompt)
 	if err != nil {
-		_ = s.setSessionStatus(session.publicID, "failed")
 		writeError(writer, http.StatusBadGateway, err.Error())
 		return
 	}
-	for _, output := range outputs {
-		if err := s.appendSessionMessage(session.publicID, "agent", output.Text, "running"); err != nil {
-			writeError(writer, http.StatusInternalServerError, err.Error())
-			return
-		}
-	}
-	if err := s.setSessionStatus(session.publicID, "completed"); err != nil {
-		writeError(writer, http.StatusInternalServerError, err.Error())
-		return
-	}
-	writeJSON(writer, http.StatusOK, map[string]any{
+	response := map[string]any{
 		"session_id": session.publicID,
-		"outputs":    outputs,
-	})
+		"outputs":    outcome.outputs,
+		"status":     outcome.status,
+	}
+	if outcome.question != nil {
+		response["question"] = outcome.question
+	}
+	writeJSON(writer, http.StatusOK, response)
 }
 
 func (s *Server) localAgentSession(
@@ -169,46 +172,27 @@ func (s *Server) localAgentSession(
 	return session, nil
 }
 
-func promptSession(ctx context.Context, session *agentSession, prompt string) ([]agentPromptOutput, error) {
-	session.mu.Lock()
-	defer session.mu.Unlock()
-	collected := make(chan acpruntime.ACPNotification, 64)
-	stop := make(chan struct{})
-	go collectSessionNotifications(session, collected, stop)
-	err := session.client.Prompt(ctx, session.nativeID, prompt)
-	timer := time.NewTimer(75 * time.Millisecond)
-	select {
-	case <-timer.C:
-	case <-ctx.Done():
-	}
-	close(stop)
-	var outputs []agentPromptOutput
-	for {
-		select {
-		case output := <-collected:
-			if strings.TrimSpace(output.Text) != "" {
-				outputs = append(outputs, agentPromptOutput{Kind: output.Kind, Text: output.Text})
-			}
-		default:
-			return outputs, err
-		}
-	}
-}
-
+// collectSessionNotifications owns target and closes it on return, so the
+// consumer can range to completion without racing a send against a close.
+// Sends block rather than drop: losing a chunk would silently truncate the
+// transcript that the gateway and every grantee read.
 func collectSessionNotifications(
 	session *agentSession, target chan<- acpruntime.ACPNotification, stop <-chan struct{},
 ) {
+	defer close(target)
 	for {
 		select {
 		case output, ok := <-session.client.Notifications():
 			if !ok {
 				return
 			}
-			if output.SessionID == session.nativeID {
-				select {
-				case target <- output:
-				default:
-				}
+			if output.SessionID != session.nativeID {
+				continue
+			}
+			select {
+			case target <- output:
+			case <-stop:
+				return
 			}
 		case <-stop:
 			return

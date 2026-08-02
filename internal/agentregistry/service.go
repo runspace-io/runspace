@@ -12,8 +12,9 @@ import (
 )
 
 var (
-	ErrUnauthorized = errors.New("authentication required")
-	ErrInvalidInput = errors.New("invalid agent installation")
+	ErrUnauthorized     = errors.New("authentication required")
+	ErrInvalidInput     = errors.New("invalid agent installation")
+	ErrQuestionResolved = errors.New("question has already been resolved")
 )
 
 type ActivityStatus string
@@ -66,18 +67,22 @@ type GraphProjector interface {
 }
 
 type Service struct {
-	mu         sync.RWMutex
-	items      map[string]map[string]Installation
-	store      Store
-	grantStore TaskGrantStore
-	taskStore  TaskStore
-	authorizer Authorizer
-	messages   MessageWriter
-	grants     map[string]map[string]TaskGrant
-	tasks      map[string]AgentTask
-	executor   TaskExecutor
-	graph      GraphProjector
-	now        func() time.Time
+	mu            sync.RWMutex
+	items         map[string]map[string]Installation
+	store         Store
+	grantStore    TaskGrantStore
+	taskStore     TaskStore
+	messageStore  TaskMessageStore
+	questionStore TaskQuestionStore
+	answerer      QuestionAnswerer
+	publisher     EventPublisher
+	authorizer    Authorizer
+	messages      MessageWriter
+	grants        map[string]map[string]TaskGrant
+	tasks         map[string]AgentTask
+	executor      TaskExecutor
+	graph         GraphProjector
+	now           func() time.Time
 }
 
 func New(now func() time.Time, authorizer ...Authorizer) *Service {

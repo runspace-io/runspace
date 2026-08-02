@@ -4,10 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/runspace/runspace/internal/collaboration"
 	"github.com/runspace/runspace/internal/workspace"
 )
@@ -51,7 +49,7 @@ func parseStringSlice(value []byte) []string {
 func New(db *sql.DB) *Store { return &Store{db: db} }
 
 func (s *Store) Migrate(ctx context.Context) error {
-	_, err := s.db.ExecContext(ctx, schema+graphSchema)
+	_, err := s.db.ExecContext(ctx, schema+graphSchema+taskMessageSchema+taskQuestionSchema)
 	return err
 }
 func (s *Store) CreateWorkspace(ctx context.Context, w Workspace) error {
@@ -76,10 +74,13 @@ func (s *Store) CreateWorkspaceWithMember(ctx context.Context, w workspace.Works
 		}
 	}()
 	if _, err = tx.ExecContext(ctx, `INSERT INTO workspaces (id,slug,name,created_by,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6)`, w.ID, w.Slug, w.Name, w.CreatedBy, w.CreatedAt, w.UpdatedAt); err != nil {
-		return err
+		// The in-memory slug check only sees workspaces this process has
+		// hydrated, so a duplicate reaches the database instead. Report it as a
+		// conflict rather than leaking a driver error as a 500.
+		return alreadyExists(err)
 	}
 	if _, err = tx.ExecContext(ctx, `INSERT INTO workspace_members (workspace_id,user_id,role,created_at) VALUES ($1,$2,$3,$4)`, m.WorkspaceID, m.UserID, m.Role, m.CreatedAt); err != nil {
-		return err
+		return alreadyExists(err)
 	}
 	return tx.Commit()
 }
@@ -181,11 +182,7 @@ func collaborationChannelQuery(workspaceID string) string {
 
 func (s *Store) CreateRepository(ctx context.Context, r workspace.Repository) error {
 	_, err := s.db.ExecContext(ctx, `INSERT INTO repositories (id,workspace_id,provider,full_name,clone_url,default_branch,created_by,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`, r.ID, r.WorkspaceID, r.Provider, r.FullName, r.CloneURL, r.DefaultBranch, r.CreatedBy, r.CreatedAt)
-	var pgError *pgconn.PgError
-	if errors.As(err, &pgError) && pgError.Code == "23505" {
-		return workspace.ErrAlreadyExists
-	}
-	return err
+	return alreadyExists(err)
 }
 
 func (s *Store) ListRepositories(ctx context.Context, userID, workspaceID string) ([]workspace.Repository, error) {

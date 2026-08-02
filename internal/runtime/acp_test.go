@@ -2,13 +2,18 @@ package runtime
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/runspace/runspace/internal/contracts"
 )
 
+// fakeACP is driven from more than one goroutine: ACP.Run prompts in the
+// background while ACP.Send prompts from the caller. Its recording fields need
+// the same guarding a real client would have.
 type fakeACP struct {
+	mu        sync.Mutex
 	notices   chan ACPNotification
 	session   string
 	cwd       string
@@ -19,6 +24,8 @@ type fakeACP struct {
 
 func (f *fakeACP) Initialize(context.Context) error { return nil }
 func (f *fakeACP) NewSession(_ context.Context, cwd string) (string, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.session = "s1"
 	f.cwd = cwd
 	return f.session, nil
@@ -29,7 +36,9 @@ func (f *fakeACP) SetSessionModel(context.Context, string, string) error {
 }
 func (f *fakeACP) Prompt(context.Context, string, string) error {
 	// The test peer records both the initial and follow-up prompts.
+	f.mu.Lock()
 	f.prompts = append(f.prompts, "prompt")
+	f.mu.Unlock()
 	if f.calls != nil {
 		f.calls <- struct{}{}
 	}
@@ -69,9 +78,29 @@ func TestACPSendRejectsInactiveOrInvalidInput(t *testing.T) {
 		t.Fatal("expected empty input error")
 	}
 }
-func (f *fakeACP) Cancel(context.Context, string) error  { f.cancelled = true; return nil }
+func (f *fakeACP) Cancel(context.Context, string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.cancelled = true
+	return nil
+}
+func (f *fakeACP) AnswerPermission(context.Context, string, string) error {
+	return nil
+}
 func (f *fakeACP) Notifications() <-chan ACPNotification { return f.notices }
-func (f *fakeACP) Close() error                          { return nil }
+
+func (f *fakeACP) readCWD() string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.cwd
+}
+
+func (f *fakeACP) wasCancelled() bool {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.cancelled
+}
+func (f *fakeACP) Close() error { return nil }
 
 func TestACPStreamsSessionUpdates(t *testing.T) {
 	fake := &fakeACP{notices: make(chan ACPNotification, 1)}
@@ -92,8 +121,8 @@ func TestACPStreamsSessionUpdates(t *testing.T) {
 	if output.Text != "hello" || output.RunID != "r1" {
 		t.Fatalf("unexpected output: %+v", output)
 	}
-	if fake.cwd != "/workspace/repository" {
-		t.Fatalf("ACP session cwd=%q", fake.cwd)
+	if cwd := fake.readCWD(); cwd != "/workspace/repository" {
+		t.Fatalf("ACP session cwd=%q", cwd)
 	}
 }
 
@@ -107,7 +136,7 @@ func TestACPStopCancelsSession(t *testing.T) {
 	if err := a.Stop(context.Background(), contracts.StopRequest{RunID: "r1"}); err != nil {
 		t.Fatal(err)
 	}
-	if !fake.cancelled {
+	if !fake.wasCancelled() {
 		t.Fatal("expected ACP cancellation")
 	}
 }

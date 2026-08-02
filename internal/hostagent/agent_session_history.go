@@ -3,6 +3,7 @@ package hostagent
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 	"sort"
 	"strings"
@@ -20,6 +21,7 @@ type localSessionView struct {
 	Status       string                `json:"status"`
 	PauseSupport string                `json:"pause_support"`
 	Messages     []LocalSessionMessage `json:"messages"`
+	Question     *LocalPendingQuestion `json:"question,omitempty"`
 	UpdatedAt    string                `json:"updated_at,omitempty"`
 }
 
@@ -109,6 +111,11 @@ func (s *Server) cancelAgentSession(writer http.ResponseWriter, request *http.Re
 		writeError(writer, http.StatusNotFound, "agent task is not active")
 		return
 	}
+	session.cancelled.Store(true)
+	// A turn parked on a question is blocked inside the ACP peer, so release the
+	// question first — otherwise the cancel cannot reach the agent until the
+	// question times out.
+	s.releasePendingQuestion(request.Context(), key, session)
 	if err := session.client.Cancel(request.Context(), session.nativeID); err != nil {
 		writeError(writer, http.StatusBadGateway, err.Error())
 		return
@@ -117,30 +124,39 @@ func (s *Server) cancelAgentSession(writer http.ResponseWriter, request *http.Re
 		writeError(writer, http.StatusInternalServerError, err.Error())
 		return
 	}
+	_ = s.pushTaskUpdate(request.Context(), session, nil, "cancelled")
 	writeJSON(writer, http.StatusOK, map[string]string{"status": "cancelled"})
 }
 
-func (s *Server) appendSessionMessage(key, role, body, status string) error {
+// appendSessionMessage records one turn message and returns it so callers can
+// forward the same identity to the gateway. The sequence counter keeps IDs
+// unique when several streamed chunks land inside one clock tick — a coarse
+// clock would otherwise mint duplicate IDs and the server would discard chunks.
+func (s *Server) appendSessionMessage(
+	key, role, body, status string,
+) (LocalSessionMessage, error) {
 	body = strings.TrimSpace(body)
 	if body == "" {
-		return nil
+		return LocalSessionMessage{}, nil
 	}
 	now := time.Now().UTC()
-	digest := sha256.Sum256([]byte(key + now.Format(time.RFC3339Nano) + role))
+	stamp := now.Format(time.RFC3339Nano)
+	digest := sha256.Sum256(fmt.Appendf(nil, "%s%s%s%d", key, stamp, role, s.messageSeq.Add(1)))
+	message := LocalSessionMessage{
+		ID:   "local_message_" + hex.EncodeToString(digest[:8]),
+		Role: role, Body: body, CreatedAt: stamp,
+	}
 	s.mu.Lock()
 	session := s.userConfigSessionLocked(key)
 	if role == "user" && strings.TrimSpace(session.Title) == "" {
 		session.Title = localChatTitle(body)
 	}
 	session.Status = status
-	session.UpdatedAt = now.Format(time.RFC3339Nano)
-	session.Messages = append(session.Messages, LocalSessionMessage{
-		ID:   "local_message_" + hex.EncodeToString(digest[:8]),
-		Role: role, Body: body, CreatedAt: now.Format(time.RFC3339Nano),
-	})
+	session.UpdatedAt = stamp
+	session.Messages = append(session.Messages, message)
 	s.replaceUserSessionLocked(key, session)
 	s.mu.Unlock()
-	return s.saveConfig()
+	return message, s.saveConfig()
 }
 
 func (s *Server) setSessionStatus(key, status string) error {
@@ -183,7 +199,7 @@ func sessionView(key string, session LocalACPSession) localSessionView {
 	return localSessionView{
 		ID: key, Title: sessionTitle(session), AgentID: session.AgentID, ResourceID: session.ResourceID,
 		ThreadID: session.ThreadID, Status: status, PauseSupport: "cancel-only",
-		Messages: messages, UpdatedAt: session.UpdatedAt,
+		Messages: messages, Question: session.Question, UpdatedAt: session.UpdatedAt,
 	}
 }
 

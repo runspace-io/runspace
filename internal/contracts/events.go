@@ -20,6 +20,15 @@ const (
 	EventGitStatusChanged = "git.status.changed"
 )
 
+// Agent task events carry host-executed chat turns onto the workspace bus so
+// every member with a grant sees the same transcript as the owner.
+const (
+	EventAgentTaskMessage      = "agent.task.message"
+	EventAgentTaskStatus       = "agent.task.status"
+	EventAgentQuestionAsked    = "agent.question.asked"
+	EventAgentQuestionAnswered = "agent.question.answered"
+)
+
 // EventEnvelope is the versioned, append-only contract carried by the bus.
 type EventEnvelope struct {
 	ID           string          `json:"id"`

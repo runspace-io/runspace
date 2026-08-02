@@ -49,6 +49,7 @@ type LocalACPSession struct {
 	SessionID  string                `json:"session_id"`
 	Status     string                `json:"status,omitempty"`
 	Messages   []LocalSessionMessage `json:"messages,omitempty"`
+	Question   *LocalPendingQuestion `json:"question,omitempty"`
 	UpdatedAt  string                `json:"updated_at,omitempty"`
 }
 

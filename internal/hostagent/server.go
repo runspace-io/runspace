@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -36,6 +37,7 @@ type Server struct {
 	newACPClient   agentClientFactory
 	availabilityMu sync.Mutex
 	availability   map[string]resourceAvailability
+	messageSeq     atomic.Uint64
 }
 
 type RepositoryStatus struct {
@@ -83,6 +85,7 @@ func (s *Server) Handler() http.Handler {
 	router.Post("/v1/agents/{agentID}/prompt", s.promptAgent)
 	router.Get("/v1/agents/{agentID}/session", s.getAgentSession)
 	router.Post("/v1/agents/{agentID}/session/cancel", s.cancelAgentSession)
+	router.Post("/v1/agents/{agentID}/session/answer", s.answerAgentQuestion)
 	router.Get("/v1/agents/health", s.agentHealth)
 	router.Get("/v1/agents/{agentID}/models", s.agentModels)
 	router.Get("/v1/config/export", s.exportConfig)

@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strings"
 	"sync"
@@ -18,14 +19,38 @@ type ACPClient interface {
 	SetSessionModel(context.Context, string, string) error
 	Prompt(context.Context, string, string) error
 	Cancel(context.Context, string) error
+	// AnswerPermission resolves a parked permission request. An empty optionID
+	// cancels it, matching what the agent sees when a question times out.
+	AnswerPermission(context.Context, string, string) error
 	Notifications() <-chan ACPNotification
 	Close() error
+}
+
+// NotificationPermissionRequest marks a notification whose Payload is a
+// PermissionRequest rather than streamed agent text.
+const NotificationPermissionRequest = "permission_request"
+
+type PermissionOption struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	Kind string `json:"kind"`
+}
+
+// PermissionRequest is a question the agent is blocked on until someone with
+// the right grant answers it.
+type PermissionRequest struct {
+	QuestionID string             `json:"question_id"`
+	Title      string             `json:"title"`
+	Options    []PermissionOption `json:"options"`
 }
 
 type ACPNotification struct {
 	SessionID string
 	Kind      string
 	Text      string
+	// Payload carries the raw session/update params so callers can read
+	// structured detail (tool calls, permission options) that Text flattens away.
+	Payload json.RawMessage
 }
 
 type ACPFactory func(context.Context) (ACPClient, error)
