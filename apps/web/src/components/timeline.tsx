@@ -1,7 +1,14 @@
 'use client';
 
-import { Bot, Braces, Sparkles, SquareTerminal, type LucideIcon } from 'lucide-react';
-import { useEffect, useLayoutEffect, useRef } from 'react';
+import {
+  Bot,
+  Braces,
+  MessageSquareText,
+  Sparkles,
+  SquareTerminal,
+  type LucideIcon,
+} from 'lucide-react';
+import { useEffect, useLayoutEffect, useRef, type CSSProperties } from 'react';
 import type { TimelineItem } from '@/lib/workspace-state';
 import type { ApiGraphNode, WorkspaceApiClient } from '@/lib/api-client';
 import { RichMessageBody } from './rich-message-body';
@@ -46,6 +53,7 @@ export function Timeline({
       }}
     >
       <div ref={content} className="message-feed-content">
+        {items.length === 0 && <TimelineEmptyState />}
         {items.map((item, index) => {
           const continuation = isContinuation(item, items[index - 1]);
           return (
@@ -60,6 +68,16 @@ export function Timeline({
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function TimelineEmptyState() {
+  return (
+    <div className="timeline-empty-state">
+      <MessageSquareText size={22} aria-hidden="true" />
+      <strong>No messages yet</strong>
+      <p>Say hello, or connect an agent and ask it to get started.</p>
     </div>
   );
 }
@@ -150,11 +168,19 @@ function MessageAvatar({ item }: { item: TimelineItem }) {
     );
   }
   const initials = item.author === 'You' ? 'Y' : initialsFor(item.author);
+  const style = { '--avatar-hue': avatarHue(item.author) } as CSSProperties;
   return (
-    <span className="message-avatar" aria-hidden="true">
+    <span className="message-avatar" aria-hidden="true" style={style}>
       {initials}
     </span>
   );
+}
+
+/** A stable, per-author hue so avatars read as distinct people, not identical gray boxes. */
+function avatarHue(name: string): number {
+  let hash = 0;
+  for (const character of name) hash = (hash * 31 + character.charCodeAt(0)) % 360;
+  return hash;
 }
 
 function ProviderIcon({ providerID }: { providerID: string | undefined }) {

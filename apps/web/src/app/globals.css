@@ -55,6 +55,13 @@ button {
   border: 0;
   cursor: pointer;
   color: inherit;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
+}
+button:active:not(:disabled) {
+  filter: brightness(0.92);
 }
 :where(button, a, input, select, textarea):focus-visible {
   outline: 2px solid var(--accent);
@@ -914,6 +921,10 @@ button {
   background: var(--accent-soft);
   color: var(--accent);
 }
+.context-primary-action:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 22%, var(--accent-soft));
+}
 .context-primary-action:disabled {
   cursor: not-allowed;
   border-color: var(--line);
@@ -924,6 +935,10 @@ button {
   border: 1px solid var(--line);
   background: var(--surface-2);
   color: var(--text-2);
+}
+.context-secondary-action:hover {
+  color: var(--text);
+  background: var(--surface-3);
 }
 .context-secondary-action.icon-button {
   flex: 0 0 auto;
@@ -2277,6 +2292,35 @@ button {
 
 .message-feed-content {
   min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.timeline-empty-state {
+  margin: auto;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  max-width: 300px;
+  padding: 24px;
+  color: var(--text-3);
+  text-align: center;
+}
+
+.timeline-empty-state svg {
+  color: var(--text-3);
+}
+
+.timeline-empty-state strong {
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.timeline-empty-state p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .message-row {
@@ -2310,10 +2354,11 @@ button {
 .message-continuation-time {
   align-self: start;
   padding-top: 4px;
-  color: transparent;
+  color: color-mix(in srgb, var(--text-3) 45%, transparent);
   font: 500 9px var(--sans);
   text-align: center;
   white-space: nowrap;
+  transition: color 120ms ease;
 }
 
 .message-row.is-continuation:hover .message-continuation-time {
@@ -2325,10 +2370,10 @@ button {
   width: 36px;
   height: 36px;
   place-items: center;
-  border: 1px solid var(--line);
+  border: 1px solid hsl(var(--avatar-hue, 210) 25% 30%);
   border-radius: 7px;
-  background: var(--surface-3);
-  color: var(--text-2);
+  background: hsl(var(--avatar-hue, 210) 28% 18%);
+  color: hsl(var(--avatar-hue, 210) 65% 78%);
   font: 700 11px var(--sans);
 }
 
@@ -2362,15 +2407,15 @@ button {
 
 .message-row-header time {
   flex: 0 0 auto;
-  opacity: 0;
+  color: color-mix(in srgb, var(--text-3) 55%, transparent);
   font: 500 10px var(--sans);
   white-space: nowrap;
-  transition: opacity 100ms ease;
+  transition: color 100ms ease;
 }
 
 .message-row:hover .message-row-header time,
 .message-row:focus-within .message-row-header time {
-  opacity: 1;
+  color: var(--text-3);
 }
 
 .message-provider {
@@ -2404,8 +2449,10 @@ button {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  button,
   .message-row,
-  .message-row-header time {
+  .message-row-header time,
+  .message-continuation-time {
     transition: none;
   }
 }
