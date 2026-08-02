@@ -54,8 +54,10 @@ type LocalACPSession struct {
 }
 
 type LocalSessionMessage struct {
-	ID        string `json:"id"`
-	Role      string `json:"role"`
+	ID   string `json:"id"`
+	Role string `json:"role"`
+	// Kind distinguishes a command the agent ran ("tool_call") from prose.
+	Kind      string `json:"kind,omitempty"`
 	Body      string `json:"body"`
 	CreatedAt string `json:"created_at"`
 }

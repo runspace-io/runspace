@@ -3908,3 +3908,19 @@ button {
   color: var(--text-3);
   font-size: 10px;
 }
+
+.agent-task-log li.is-tool-call .agent-task-log-body header strong {
+  color: var(--accent);
+}
+.agent-task-log li.is-tool-call pre {
+  margin: 0;
+  padding: 8px 10px;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--text-2);
+  background: var(--surface-2);
+  font: 400 11px/1.5 var(--mono, monospace);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

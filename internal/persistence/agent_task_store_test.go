@@ -14,6 +14,14 @@ import (
 	"github.com/runspace/runspace/internal/workspace"
 )
 
+// messageID scopes a message identifier to its test. The column is a global
+// primary key, so a shared literal lets one test's leftover row silently
+// suppress another's insert through ON CONFLICT DO NOTHING.
+func messageID(t *testing.T, name string) string {
+	t.Helper()
+	return t.Name() + "-" + name
+}
+
 // taskFixture creates the workspace, thread, and task that transcripts and
 // questions hang off, and returns the task ID scoped to this test.
 func taskFixture(t *testing.T) (*Store, context.Context, string) {
@@ -67,8 +75,8 @@ func TestAgentTaskMessagesRoundTripInOrder(t *testing.T) {
 	store, ctx, taskID := taskFixture(t)
 	base := time.Now().UTC().Truncate(time.Microsecond)
 	if err := store.AppendAgentTaskMessages(ctx, taskID, []agentregistry.TaskMessage{
-		{ID: "m2", Role: "agent", Body: "Reading main.go", CreatedAt: base.Add(time.Second)},
-		{ID: "m1", Role: "user", Body: "investigate", CreatedAt: base},
+		{ID: messageID(t, "m2"), Role: "agent", Body: "Reading main.go", CreatedAt: base.Add(time.Second)},
+		{ID: messageID(t, "m1"), Role: "user", Body: "investigate", CreatedAt: base},
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -76,7 +84,7 @@ func TestAgentTaskMessagesRoundTripInOrder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(stored) != 2 || stored[0].ID != "m1" || stored[1].ID != "m2" {
+	if len(stored) != 2 || stored[0].ID != messageID(t, "m1") || stored[1].ID != messageID(t, "m2") {
 		t.Fatalf("transcript out of order: %+v", stored)
 	}
 	if stored[0].Body != "investigate" || stored[1].Role != "agent" {
@@ -88,7 +96,7 @@ func TestAgentTaskMessagesRoundTripInOrder(t *testing.T) {
 func TestAgentTaskMessageAppendIsIdempotent(t *testing.T) {
 	store, ctx, taskID := taskFixture(t)
 	message := agentregistry.TaskMessage{
-		ID: "m1", Role: "agent", Body: "Reading main.go",
+		ID: messageID(t, "m1"), Role: "agent", Body: "Reading main.go",
 		CreatedAt: time.Now().UTC().Truncate(time.Microsecond),
 	}
 	for range 3 {
@@ -202,7 +210,7 @@ func TestTaskDeletionCascadesToTranscriptAndQuestions(t *testing.T) {
 	store, ctx, taskID := taskFixture(t)
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	if err := store.AppendAgentTaskMessages(ctx, taskID, []agentregistry.TaskMessage{
-		{ID: "m1", Role: "user", Body: "investigate", CreatedAt: now},
+		{ID: messageID(t, "m1"), Role: "user", Body: "investigate", CreatedAt: now},
 	}); err != nil {
 		t.Fatal(err)
 	}

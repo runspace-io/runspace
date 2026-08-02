@@ -111,16 +111,18 @@ export function TaskLog({
   return (
     <ol className="agent-task-log" aria-label="Private agent chat">
       {messages.map((message, index) => (
-        <li key={message.id} className={`is-${message.role}`}>
+        <li key={message.id} className={logEntryClass(message)}>
           <div className="agent-task-log-index">{String(index + 1).padStart(2, '0')}</div>
           <div className="agent-task-log-body">
             <header>
-              <strong>{message.role === 'agent' ? 'Agent response' : 'Your instruction'}</strong>
+              <strong>{entryLabel(message)}</strong>
               <time>{formatTime(message.created_at)}</time>
             </header>
-            <p>{message.body}</p>
+            {/* A command the agent ran is terminal output, so keep its
+                whitespace instead of reflowing it as prose. */}
+            {isToolCall(message) ? <pre>{message.body}</pre> : <p>{message.body}</p>}
           </div>
-          {message.role === 'agent' && (
+          {message.role === 'agent' && !isToolCall(message) && (
             <button
               type="button"
               className="agent-task-share"
@@ -193,6 +195,19 @@ export function AgentTaskComposer({
       </div>
     </footer>
   );
+}
+
+function isToolCall(message: LocalTaskMessage): boolean {
+  return message.kind === 'tool_call';
+}
+
+function logEntryClass(message: LocalTaskMessage): string {
+  return isToolCall(message) ? 'is-agent is-tool-call' : `is-${message.role}`;
+}
+
+function entryLabel(message: LocalTaskMessage): string {
+  if (isToolCall(message)) return 'Agent terminal';
+  return message.role === 'agent' ? 'Agent response' : 'Your instruction';
 }
 
 function TaskStatus({ status }: { status: string }) {

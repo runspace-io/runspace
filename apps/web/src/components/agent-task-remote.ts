@@ -134,6 +134,7 @@ async function remoteSession(
     messages: messages.map((message) => ({
       id: message.id,
       role: message.role,
+      kind: message.kind,
       body: message.body,
       created_at: message.created_at,
     })),

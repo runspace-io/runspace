@@ -69,7 +69,7 @@ func (s *Server) promptAgent(writer http.ResponseWriter, request *http.Request) 
 		writeError(writer, http.StatusBadRequest, err.Error())
 		return
 	}
-	prompted, err := s.appendSessionMessage(session.publicID, "user", body.Prompt, "running")
+	prompted, err := s.appendSessionMessage(session.publicID, "user", "", body.Prompt, "running")
 	if err != nil {
 		writeError(writer, http.StatusInternalServerError, err.Error())
 		return

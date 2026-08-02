@@ -113,6 +113,8 @@ export type ApiAgentTask = {
 export type ApiAgentTaskMessage = {
   id: string;
   role: 'user' | 'agent';
+  /** "tool_call" is a command the agent ran, rendered as terminal activity. */
+  kind?: string | undefined;
   body: string;
   created_at: string;
 };

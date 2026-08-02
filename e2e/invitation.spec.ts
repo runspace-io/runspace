@@ -1,7 +1,7 @@
 import { asUser } from './gateway-token';
 import { expect, test, type APIRequestContext } from '@playwright/test';
 
-test.setTimeout(60_000);
+test.setTimeout(90_000);
 
 const INVITEE = process.env.E2E_MEMBER_USERNAME ?? 'nahid';
 const INVITEE_PASSWORD = process.env.E2E_MEMBER_PASSWORD ?? 'nahid123';
@@ -36,8 +36,10 @@ test('an invited person joins by opening the link', async ({ page, request }) =>
   await page.getByLabel('Password').fill(INVITEE_PASSWORD);
   await page.getByRole('button', { name: 'Sign in' }).click();
 
+  // The dev server compiles /invite on first request, which can outlast the
+  // default wait right after the web container restarts.
   await expect(page.getByRole('heading', { name: `Join ${workspace.name}` })).toBeVisible({
-    timeout: 15_000,
+    timeout: 45_000,
   });
   await expect(page.getByText(/admin invited you as a/)).toBeVisible();
   await page.getByRole('button', { name: 'Join workspace' }).click();
@@ -68,6 +70,6 @@ test('a spent link is refused', async ({ page, request }) => {
   await page.getByRole('button', { name: 'Sign in' }).click();
 
   await expect(page.getByRole('heading', { name: 'This invitation cannot be used' })).toBeVisible({
-    timeout: 15_000,
+    timeout: 45_000,
   });
 });

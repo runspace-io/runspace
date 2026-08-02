@@ -133,7 +133,7 @@ func (s *Server) cancelAgentSession(writer http.ResponseWriter, request *http.Re
 // unique when several streamed chunks land inside one clock tick — a coarse
 // clock would otherwise mint duplicate IDs and the server would discard chunks.
 func (s *Server) appendSessionMessage(
-	key, role, body, status string,
+	key, role, kind, body, status string,
 ) (LocalSessionMessage, error) {
 	body = strings.TrimSpace(body)
 	if body == "" {
@@ -144,7 +144,7 @@ func (s *Server) appendSessionMessage(
 	digest := sha256.Sum256(fmt.Appendf(nil, "%s%s%s%d", key, stamp, role, s.messageSeq.Add(1)))
 	message := LocalSessionMessage{
 		ID:   "local_message_" + hex.EncodeToString(digest[:8]),
-		Role: role, Body: body, CreatedAt: stamp,
+		Role: role, Kind: kind, Body: body, CreatedAt: stamp,
 	}
 	s.mu.Lock()
 	session := s.userConfigSessionLocked(key)

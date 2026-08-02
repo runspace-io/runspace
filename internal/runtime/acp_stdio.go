@@ -255,22 +255,18 @@ func (c *stdioACP) read(stdout io.Reader) {
 // blocks: a stalled consumer must not wedge the ACP reader loop.
 func (c *stdioACP) notify(params json.RawMessage) {
 	var update struct {
-		SessionID string `json:"sessionId"`
-		Update    struct {
-			Kind    string `json:"sessionUpdate"`
-			Content struct {
-				Text string `json:"text"`
-			} `json:"content"`
-		} `json:"update"`
+		SessionID string          `json:"sessionId"`
+		Update    json.RawMessage `json:"update"`
 	}
 	if json.Unmarshal(params, &update) != nil || update.SessionID == "" {
 		return
 	}
+	kind, text := describeUpdate(update.Update)
 	select {
 	case c.notifications <- ACPNotification{
 		SessionID: update.SessionID,
-		Kind:      update.Update.Kind,
-		Text:      update.Update.Content.Text,
+		Kind:      kind,
+		Text:      text,
 		Payload:   append(json.RawMessage(nil), params...),
 	}:
 	default:

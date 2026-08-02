@@ -4,9 +4,11 @@ test.describe('Runspace landing page', () => {
   test('presents the private-to-shared collaboration model', async ({ page }) => {
     await page.goto('/');
 
-    await expect(page.getByRole('heading', { level: 1 })).toContainText(
-      'Your team’s context. Your agents, connected on your terms.',
-    );
+    // The headline is set across several lines, so assert on its phrases rather
+    // than one exact string that a line break would break.
+    const headline = page.getByRole('heading', { level: 1 });
+    await expect(headline).toContainText('Your team’s context.');
+    await expect(headline).toContainText('Your agents.');
     await expect(page.getByRole('link', { name: 'Request a pilot' }).first()).toBeVisible();
     await expect(
       page.getByLabel('Runspace workflow showing shared context and private agent work'),

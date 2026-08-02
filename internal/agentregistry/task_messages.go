@@ -9,8 +9,11 @@ import (
 )
 
 type TaskMessage struct {
-	ID        string    `json:"id"`
-	Role      string    `json:"role"`
+	ID   string `json:"id"`
+	Role string `json:"role"`
+	// Kind is "tool_call" for a command the agent ran, empty for prose. It lets
+	// the UI show the agent's terminal activity as terminal activity.
+	Kind      string    `json:"kind,omitempty"`
 	Body      string    `json:"body"`
 	CreatedAt time.Time `json:"created_at"`
 }

@@ -10,6 +10,7 @@ import (
 // and post-refresh clients read the same transcript the owner saw live.
 const taskMessageSchema = `
 CREATE TABLE IF NOT EXISTS agent_task_messages (id text PRIMARY KEY, task_id text NOT NULL REFERENCES agent_tasks(id) ON DELETE CASCADE, role text NOT NULL, body text NOT NULL, created_at timestamptz NOT NULL);
+ALTER TABLE agent_task_messages ADD COLUMN IF NOT EXISTS kind text NOT NULL DEFAULT '';
 CREATE INDEX IF NOT EXISTS agent_task_messages_task ON agent_task_messages(task_id,created_at);`
 
 // AppendAgentTaskMessages is idempotent on message ID so a host agent that
@@ -27,9 +28,9 @@ func (s *Store) AppendAgentTaskMessages(
 	defer func() { _ = transaction.Rollback() }()
 	for _, message := range messages {
 		if _, err := transaction.ExecContext(ctx, `INSERT INTO agent_task_messages
-			(id,task_id,role,body,created_at) VALUES ($1,$2,$3,$4,$5)
+			(id,task_id,role,kind,body,created_at) VALUES ($1,$2,$3,$4,$5,$6)
 			ON CONFLICT (id) DO NOTHING`,
-			message.ID, taskID, message.Role, message.Body, message.CreatedAt,
+			message.ID, taskID, message.Role, message.Kind, message.Body, message.CreatedAt,
 		); err != nil {
 			return err
 		}
@@ -40,7 +41,7 @@ func (s *Store) AppendAgentTaskMessages(
 func (s *Store) ListAgentTaskMessages(
 	ctx context.Context, taskID string,
 ) ([]agentregistry.TaskMessage, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT id,role,body,created_at
+	rows, err := s.db.QueryContext(ctx, `SELECT id,role,kind,body,created_at
 		FROM agent_task_messages WHERE task_id=$1 ORDER BY created_at,id`, taskID)
 	if err != nil {
 		return nil, err
@@ -50,7 +51,7 @@ func (s *Store) ListAgentTaskMessages(
 	for rows.Next() {
 		var message agentregistry.TaskMessage
 		if err := rows.Scan(
-			&message.ID, &message.Role, &message.Body, &message.CreatedAt,
+			&message.ID, &message.Role, &message.Kind, &message.Body, &message.CreatedAt,
 		); err != nil {
 			return nil, err
 		}

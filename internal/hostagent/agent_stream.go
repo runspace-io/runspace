@@ -182,6 +182,15 @@ func turnStatus(err error) string {
 	return "completed"
 }
 
+// transcriptKind keeps only the distinction the UI renders: a command the agent
+// ran versus anything it said. Every other ACP update kind reads as prose.
+func transcriptKind(updateKind string) string {
+	if updateKind == acpruntime.NotificationToolCall {
+		return acpruntime.NotificationToolCall
+	}
+	return ""
+}
+
 func (s *Server) consumeTurn(
 	ctx context.Context, session *agentSession, chunks <-chan acpruntime.ACPNotification,
 	state *turnState,
@@ -202,7 +211,9 @@ func (s *Server) consumeTurn(
 			continue
 		}
 		state.addOutput(agentPromptOutput{Kind: chunk.Kind, Text: text})
-		message, err := s.appendSessionMessage(session.publicID, "agent", text, "running")
+		message, err := s.appendSessionMessage(
+			session.publicID, "agent", transcriptKind(chunk.Kind), text, "running",
+		)
 		if err != nil || message.ID == "" || degraded {
 			continue
 		}
