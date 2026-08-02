@@ -2,6 +2,7 @@ package workspace
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -102,6 +103,11 @@ func TestHTTPRoutes(t *testing.T) {
 	if res.Code != http.StatusCreated {
 		t.Fatalf("create status=%d body=%s", res.Code, res.Body.String())
 	}
+	// Read the ID back rather than assuming its shape; workspace IDs are opaque.
+	var created Workspace
+	if err := json.Unmarshal(res.Body.Bytes(), &created); err != nil || created.ID == "" {
+		t.Fatalf("could not read created workspace: %v body=%s", err, res.Body.String())
+	}
 	list := httptest.NewRequest(http.MethodGet, "/workspaces", nil)
 	list.Header.Set("X-User-ID", "alice")
 	res = httptest.NewRecorder()
@@ -109,21 +115,21 @@ func TestHTTPRoutes(t *testing.T) {
 	if res.Code != http.StatusOK || !strings.Contains(res.Body.String(), "Alpha") {
 		t.Fatalf("list response=%d %s", res.Code, res.Body.String())
 	}
-	resource := httptest.NewRequest(http.MethodPost, "/workspaces/ws_1/resources", strings.NewReader(`{"provider":"folder","full_name":"notes","clone_url":"local-mirror://notes","default_branch":""}`))
+	resource := httptest.NewRequest(http.MethodPost, "/workspaces/"+created.ID+"/resources", strings.NewReader(`{"provider":"folder","full_name":"notes","clone_url":"local-mirror://notes","default_branch":""}`))
 	resource.Header.Set("X-User-ID", "alice")
 	res = httptest.NewRecorder()
 	h.ServeHTTP(res, resource)
 	if res.Code != http.StatusCreated {
 		t.Fatalf("connect resource status=%d body=%s", res.Code, res.Body.String())
 	}
-	resources := httptest.NewRequest(http.MethodGet, "/workspaces/ws_1/resources", nil)
+	resources := httptest.NewRequest(http.MethodGet, "/workspaces/"+created.ID+"/resources", nil)
 	resources.Header.Set("X-User-ID", "alice")
 	res = httptest.NewRecorder()
 	h.ServeHTTP(res, resources)
 	if res.Code != http.StatusOK || !strings.Contains(res.Body.String(), `"resources"`) {
 		t.Fatalf("list resources response=%d %s", res.Code, res.Body.String())
 	}
-	members := httptest.NewRequest(http.MethodGet, "/workspaces/ws_1/members", nil)
+	members := httptest.NewRequest(http.MethodGet, "/workspaces/"+created.ID+"/members", nil)
 	members.Header.Set("X-User-ID", "alice")
 	res = httptest.NewRecorder()
 	h.ServeHTTP(res, members)
@@ -180,6 +186,60 @@ func TestStoreWriteThrough(t *testing.T) {
 	}
 	if len(store.repos) != 1 {
 		t.Fatalf("expected repository write-through, got %d", len(store.repos))
+	}
+}
+
+// uniqueIDStore models the primary key the real database enforces, which a
+// store fake that only appends would let a duplicate ID slide past.
+type uniqueIDStore struct {
+	recordingWorkspaceStore
+}
+
+func (s *uniqueIDStore) CreateWorkspaceWithMember(
+	ctx context.Context, w Workspace, m Member,
+) error {
+	for _, existing := range s.created {
+		if existing.ID == w.ID {
+			return errors.New("duplicate key value violates unique constraint")
+		}
+	}
+	return s.recordingWorkspaceStore.CreateWorkspaceWithMember(ctx, w, m)
+}
+
+// Workspace IDs used to come from a counter that restarted with the process, so
+// the first workspace created after a gateway restart collided with one already
+// in the database.
+func TestWorkspaceIDsSurviveARestart(t *testing.T) {
+	store := &uniqueIDStore{}
+	clock := advancingClock()
+	before := NewMemoryService(clock)
+	before.SetStore(store)
+	first, err := before.CreateWorkspace(
+		context.Background(), "alice", CreateWorkspaceRequest{Name: "First"},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// A fresh service is what the gateway has after a restart: empty maps, a
+	// zeroed counter, and the same durable store underneath.
+	after := NewMemoryService(clock)
+	after.SetStore(store)
+	second, err := after.CreateWorkspace(
+		context.Background(), "alice", CreateWorkspaceRequest{Name: "Second"},
+	)
+	if err != nil {
+		t.Fatalf("creating a workspace after a restart failed: %v", err)
+	}
+	if second.ID == first.ID {
+		t.Fatalf("restart reused workspace ID %q", first.ID)
+	}
+}
+
+func advancingClock() Clock {
+	current := time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)
+	return func() time.Time {
+		current = current.Add(time.Millisecond)
+		return current
 	}
 }
 

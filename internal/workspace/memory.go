@@ -31,10 +31,6 @@ func NewMemoryService(clock Clock) *MemoryService {
 	}
 	return &MemoryService{clock: clock, workspaces: make(map[string]Workspace), members: make(map[string]map[string]Member), repositories: make(map[string]Repository)}
 }
-func (s *MemoryService) nextID(prefix string) string {
-	s.seq++
-	return fmt.Sprintf("%s_%d", prefix, s.seq)
-}
 func requireUser(userID string) error {
 	if strings.TrimSpace(userID) == "" {
 		return ErrUnauthorized
