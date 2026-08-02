@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createLocalRepositoryFixture } from './local-repository';
 import { fillNewChannelResource, selectNewChannelAgent } from './channel-dialog';
-import { openChannelContext } from './channel-context';
+import { openAgentPopover } from './channel-header-popovers';
 
 test.setTimeout(60_000);
 
@@ -134,20 +134,20 @@ async function openChannelWithAgent(page: Page) {
   await selectNewChannelAgent(dialog, 'mock');
   await dialog.getByRole('button', { name: 'Create channel' }).click();
   await page.getByRole('button', { name: `Open ${channelName}` }).click();
-  const context = await openChannelContext(page);
-  await context.getByRole('button', { name: 'Change agent connection' }).click();
+  const agentPopover = await openAgentPopover(page);
+  await agentPopover.getByRole('button', { name: 'Change agent connection' }).click();
   const agentDialog = page.getByRole('dialog');
   await agentDialog.getByRole('button', { name: 'Set active collaborator' }).click();
   await expect(agentDialog).toBeHidden();
-  return context;
 }
 
 test('a parked agent question is shown and can be answered', async ({ page }) => {
   const state: QuestionState = { prompted: false, open: true, answeredWith: undefined };
   await stubHostAgent(page, state);
-  const context = await openChannelWithAgent(page);
+  await openChannelWithAgent(page);
+  const agentPopover = await openAgentPopover(page);
 
-  await context.getByRole('button', { name: 'New agent chat' }).click();
+  await agentPopover.getByRole('button', { name: 'New agent chat' }).click();
   const surface = page.locator('.agent-task-surface');
   await surface.getByLabel('Instruction').fill('clean the build');
   await surface.getByRole('button', { name: 'Start chat' }).click();

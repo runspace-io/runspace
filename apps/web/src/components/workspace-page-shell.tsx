@@ -6,12 +6,11 @@ import { WorkspaceMainColumn, type ToolPanel } from './workspace-main-column';
 import { ResizableWorkspacePanels } from './resizable-workspace-panels';
 import type { ConnectionDialogMode } from './channel-connection-dialog';
 import { useTerminalSessions } from './use-terminal-sessions';
-import { resourceHasGit } from './channel-repository';
 import { channelAgentID } from './run-actions';
 import type { ApiGraphNode } from '@/lib/api-client';
 import { AgentTaskSurface } from './agent-task-surface';
 import type { AgentChatSelection } from './channel-agent-chats';
-import { WorkspaceChannelDetails } from './workspace-channel-details';
+import { ChannelHeaderPopovers } from './channel-header-popovers';
 import { useChannelSharedWork } from './use-channel-shared-work';
 import { WorkspaceShellOverlays } from './workspace-shell-overlays';
 import { WorkspacePageTopbar } from './workspace-page-topbar';
@@ -31,7 +30,6 @@ export function WorkspacePageShell({
   const [channelSettingsOpen, setChannelSettingsOpen] = useState(false);
   const [membersOpen, setMembersOpen] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
-  const [detailsOpen, setDetailsOpen] = useState(false);
   const [connectionMode, setConnectionMode] = useState<ConnectionDialogMode>();
   const [channelParentID, setChannelParentID] = useState('');
   const [terminalRepositoryID, setTerminalRepositoryID] = useState<string>();
@@ -86,9 +84,6 @@ export function WorkspacePageShell({
             workspaceID={model.workspaceID}
             workspaceName={model.workspaceName}
             channelName={model.channelName}
-            repositoryName={model.repositoryName}
-            repositoryBranch={model.repositoryBranch}
-            repositoryGit={model.repositoryGit}
             repositoryID={controller.selectedRepositoryID}
             chatReady={Boolean(controller.threadID)}
             timeline={controller.timeline}
@@ -101,41 +96,35 @@ export function WorkspacePageShell({
             onRunAgent={() => void controller.runAgent()}
             onOpenGraphNode={setGraphNode}
             onOpenChannelSettings={() => setChannelSettingsOpen(true)}
-            channelDetailsOpen={detailsOpen}
-            onToggleChannelDetails={() => setDetailsOpen((value) => !value)}
+            channelPopovers={
+              <ChannelHeaderPopovers
+                controller={controller}
+                channel={model.activeChannel}
+                chatRevision={chatRevision}
+                onRequestConnection={setConnectionMode}
+                onOpenAgentTask={() => setAgentChat(newAgentChat(controller, model))}
+                onOpenAgentChat={setAgentChat}
+                onChatShared={(chat) => {
+                  setAgentChat(chat);
+                  setChatRevision((value) => value + 1);
+                }}
+                onOpenRepositoryTool={(repositoryID, tool) =>
+                  openRepositoryTool(
+                    controller,
+                    setToolPanel,
+                    setTerminalRepositoryID,
+                    repositoryID,
+                    tool,
+                  )
+                }
+              />
+            }
             publishAvailable={model.publishAvailable}
             onOpenPublish={() => setPublishOpen(true)}
             terminalState={terminals}
             terminalRepositories={controller.repositoryOptions}
             onTerminalOpen={(repository) => setTerminalRepositoryID(repository?.id)}
           />
-        }
-        details={
-          detailsOpen ? (
-            <WorkspaceChannelDetails
-              controller={controller}
-              channel={model.activeChannel}
-              chatRevision={chatRevision}
-              onClose={() => setDetailsOpen(false)}
-              onOpenSettings={() => setChannelSettingsOpen(true)}
-              onRequestConnection={setConnectionMode}
-              onOpenNewChat={() => setAgentChat(newAgentChat(controller, model))}
-              onOpenChat={setAgentChat}
-              onChatShared={(chat) => {
-                setAgentChat(chat);
-                setChatRevision((value) => value + 1);
-              }}
-              onOpenRepositoryTool={(repositoryID, tool) =>
-                openRepositoryTool(
-                  controller,
-                  setToolPanel,
-                  setTerminalRepositoryID,
-                  repositoryID,
-                  tool,
-                )
-              }
-            />
-          ) : undefined
         }
       />
       <WorkspaceShellOverlays
@@ -224,10 +213,6 @@ function pageModel(controller: Controller, parentID: string) {
     workspaceName: controller.activeWorkspace?.name,
     channelName: activeChannel?.name,
     parentName: parent?.name,
-    repositoryName: repository?.fullName,
-    repositoryBranch: repository?.defaultBranch,
-    repositoryGit: resourceHasGit(repository),
-    repository,
     agentID: channelAgentID(activeChannel),
     publishAvailable:
       repository?.provider === 'github' && controller.activeRun?.status === 'succeeded',

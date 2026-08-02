@@ -3,7 +3,6 @@
 import type { ApiChannel } from '@/lib/api-client';
 import type { ChannelSettingsDraft } from './channel-model';
 import type { useWorkspaceController } from './use-workspace-controller';
-import { ChannelDetailsRail } from './channel-details-rail';
 import { ChannelConnectionDialog, type ConnectionDialogMode } from './channel-connection-dialog';
 import {
   agentConnectionDraft,
@@ -11,63 +10,8 @@ import {
   repositoryConnectionDraft,
   repositoryConnectionsDraft,
 } from './channel-config';
-import type { ToolPanel } from './workspace-main-column';
-import { ChannelAgentChats, type AgentChatSelection } from './channel-agent-chats';
 
 type Controller = ReturnType<typeof useWorkspaceController>;
-
-export function ChannelContextRail({
-  controller,
-  channel,
-  onClose,
-  onOpenSettings,
-  onRequestConnection,
-  onOpenRepositoryTool,
-  onOpenAgentTask,
-  chatRevision,
-  onOpenAgentChat,
-  onChatShared,
-}: {
-  controller: Controller;
-  channel?: ApiChannel | undefined;
-  onClose: () => void;
-  onOpenSettings: () => void;
-  onRequestConnection: (mode: ConnectionDialogMode) => void;
-  onOpenRepositoryTool: (repositoryID: string, tool: Exclude<ToolPanel, undefined>) => void;
-  onOpenAgentTask: () => void;
-  chatRevision: number;
-  onOpenAgentChat: (chat: AgentChatSelection) => void;
-  onChatShared: (chat: AgentChatSelection) => void;
-}) {
-  return (
-    <ChannelDetailsRail
-      channel={channel}
-      repositories={controller.repositoryOptions}
-      selectedRepositoryID={controller.selectedRepositoryID}
-      agentAvailable={controller.agentAvailable}
-      agents={controller.agents}
-      onClose={onClose}
-      onRepositoryChange={controller.setSelectedRepositoryID}
-      onOpenAgentTask={onOpenAgentTask}
-      onRequestRepositoryConnection={() => onRequestConnection('repository')}
-      onRequestAgentConnection={() => onRequestConnection('agent')}
-      onOpenSettings={onOpenSettings}
-      onOpenRepositoryTool={onOpenRepositoryTool}
-      agentChats={
-        controller.activeWorkspace && controller.threadID ? (
-          <ChannelAgentChats
-            api={controller.api}
-            workspaceID={controller.activeWorkspace.id}
-            threadID={controller.threadID}
-            revision={chatRevision}
-            onOpen={onOpenAgentChat}
-            onShared={onChatShared}
-          />
-        ) : undefined
-      }
-    />
-  );
-}
 
 export function ChannelConnectionOverlay({
   mode,

@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { createLocalRepositoryFixture, restartGateway } from './local-repository';
 import { sendCollaboratorMessage } from './collaboration';
 import { fillNewChannelResource, selectNewChannelAgent } from './channel-dialog';
-import { openChannelContext } from './channel-context';
+import { openAgentPopover, openResourcePopover } from './channel-header-popovers';
 
 test.setTimeout(60_000);
 
@@ -65,16 +65,17 @@ test('local admin can build and collaborate in a channel', async ({ page, browse
   await expect(channel).toBeVisible();
   await channel.click();
   await expect(page.getByText(new RegExp(`CHANNEL /`))).toBeVisible();
-  const channelContext = await openChannelContext(page);
-  await expect(channelContext.getByRole('heading', { name: 'Resources' })).toBeVisible();
-  await expect(channelContext.getByText('Built-in agent', { exact: true })).toBeVisible();
+  const resourcePopover = await openResourcePopover(page);
+  await expect(resourcePopover.getByRole('heading', { name: 'Resources' })).toBeVisible();
+  const agentPopover = await openAgentPopover(page);
+  await expect(agentPopover.getByText('Built-in agent', { exact: true })).toBeVisible();
   await expect(page.locator('.left-rail').getByText('Files', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: /Resource Center/ }).click();
   await expect(page.getByRole('heading', { name: 'Resource Center' })).toBeVisible();
   await expect(page.getByPlaceholder('Search shared resources')).toBeVisible();
   await expect(page.getByText('Shared by Admin').first()).toBeVisible();
   await channel.click();
-  await channelContext.getByRole('button', { name: 'Connect resource' }).click();
+  await (await openResourcePopover(page)).getByRole('button', { name: 'Connect resource' }).click();
   const repositoryDialog = page.getByRole('dialog');
   await expect(repositoryDialog.getByRole('heading', { name: 'Connect resource' })).toBeVisible();
   await expect(repositoryDialog.getByRole('button', { name: /Remote Git/ })).toBeVisible();
@@ -83,7 +84,11 @@ test('local admin can build and collaborate in a channel', async ({ page, browse
   await expect(repositoryDialog.getByText(/No upload or Docker mount is required/)).toBeVisible();
   await repositoryDialog.getByRole('button', { name: 'Close connection dialog' }).click();
 
-  await channelContext.getByRole('button', { name: 'Change agent connection' }).click();
+  await (
+    await openAgentPopover(page)
+  )
+    .getByRole('button', { name: 'Change agent connection' })
+    .click();
   const agentDialog = page.getByRole('dialog');
   await expect(agentDialog.getByRole('heading', { name: 'Connect agent' })).toBeVisible();
   await expect(agentDialog.getByRole('radio', { name: /OpenCode/ })).toBeVisible();
@@ -102,9 +107,10 @@ test('local admin can build and collaborate in a channel', async ({ page, browse
   await agentDialog.getByRole('button', { name: 'Set active collaborator' }).click();
   expect((await agentSettingsSaved).status()).toBe(200);
   await expect(agentDialog).toBeHidden();
-  await expect(channelContext.getByRole('button', { name: 'New agent chat' })).toBeVisible();
-  await expect(channelContext.getByText('OpenCode', { exact: true })).toBeVisible();
-  await expect(channelContext.getByText(/Admin-owned · Host Agent · ready/)).toBeVisible();
+  const connectedAgentPopover = await openAgentPopover(page);
+  await expect(connectedAgentPopover.getByRole('button', { name: 'New agent chat' })).toBeVisible();
+  await expect(connectedAgentPopover.getByText('OpenCode', { exact: true })).toBeVisible();
+  await expect(connectedAgentPopover.getByText(/Admin-owned · Host Agent · ready/)).toBeVisible();
   const navigationPanel = page.locator('.navigation-panel');
   const initialNavigationWidth = (await navigationPanel.boundingBox())?.width ?? 0;
   const resizeHandle = page.getByRole('separator', { name: 'Resize navigation panel' });
@@ -120,6 +126,7 @@ test('local admin can build and collaborate in a channel', async ({ page, browse
   const persistedNavigationWidth = (await navigationPanel.boundingBox())?.width ?? 0;
   const codeButton = page.getByRole('button', { name: 'Code' });
   const terminalButton = page.getByRole('button', { name: 'Terminal' });
+  await openResourcePopover(page);
   await expect(codeButton).toBeEnabled();
   await expect(terminalButton).toBeEnabled();
   await page.getByRole('treeitem', { name: 'README.md' }).click();
@@ -135,6 +142,7 @@ test('local admin can build and collaborate in a channel', async ({ page, browse
   const terminalConnected = page.waitForEvent('websocket', (socket) =>
     socket.url().includes('/terminal'),
   );
+  await openResourcePopover(page);
   await terminalButton.click();
   const terminalDialog = page.getByRole('dialog');
   await expect(terminalDialog.getByRole('heading', { name: 'Open terminal' })).toBeVisible();
@@ -174,6 +182,7 @@ test('local admin can build and collaborate in a channel', async ({ page, browse
   const diffLoaded = page.waitForResponse(
     (response) => response.url().includes('/diff?path=README.md') && response.ok(),
   );
+  await openResourcePopover(page);
   await page.getByRole('button', { name: 'Changes' }).click();
   const changesBody = (await (await changesLoaded).json()) as {
     changes: Array<{ path: string; status: string }>;
@@ -269,7 +278,7 @@ test('local admin can build and collaborate in a channel', async ({ page, browse
       }),
     });
   });
-  await channelContext.getByRole('button', { name: 'New agent chat' }).click();
+  await (await openAgentPopover(page)).getByRole('button', { name: 'New agent chat' }).click();
   const taskWorkspace = page.locator('.agent-task-surface');
   await expect(taskWorkspace.getByRole('heading', { name: 'New agent chat' })).toBeVisible();
   await expect(taskWorkspace.getByText('Private · share explicitly')).toBeVisible();
@@ -284,11 +293,18 @@ test('local admin can build and collaborate in a channel', async ({ page, browse
   const chatShared = page.waitForResponse(
     (response) => response.url().includes('/agent-tasks/') && response.request().method() === 'PUT',
   );
-  await channelContext.getByRole('button', { name: `Share ${agentPrompt} with channel` }).click();
+  const shareAgentPopover = await openAgentPopover(page);
+  await shareAgentPopover
+    .getByRole('button', { name: `Share ${agentPrompt} with channel` })
+    .click();
   const chatSharedResponse = await chatShared;
   expect(chatSharedResponse.status(), await chatSharedResponse.text()).toBe(200);
-  await expect(channelContext.getByText('Shared with this channel', { exact: true })).toBeVisible();
-  await expect(channelContext.getByRole('button', { name: new RegExp(agentPrompt) })).toBeVisible();
+  await expect(
+    shareAgentPopover.getByText('Shared with this channel', { exact: true }),
+  ).toBeVisible();
+  await expect(
+    shareAgentPopover.getByRole('button', { name: new RegExp(agentPrompt) }),
+  ).toBeVisible();
   await expect(page.getByRole('button', { name: `Open shared task ${agentPrompt}` })).toBeVisible();
   const agentMessageCreated = page.waitForResponse(
     (response) =>

@@ -304,73 +304,10 @@ button {
 .left-rail {
   border-right: 1px solid var(--line);
 }
-.channel-details-rail {
-  height: 100%;
-  min-height: 0;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  scrollbar-gutter: stable;
-  scrollbar-width: thin;
-  border-left: 1px solid var(--line);
-  background: var(--surface);
-}
-.details-rail-header {
-  min-height: 62px;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 14px 12px;
-  border-bottom: 1px solid var(--line);
-}
-.details-rail-header strong,
-.details-rail-header span {
-  display: block;
-}
-.details-rail-header strong {
-  margin-top: 5px;
-  font-size: 14px;
-  letter-spacing: -0.02em;
-}
-.details-kicker,
-.context-index {
-  color: var(--text-3);
-  font: 600 9px var(--sans);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-.context-section {
-  padding: 14px 12px 16px;
-  border-bottom: 1px solid var(--line-soft);
-}
-.context-section-heading,
-.context-section-heading > div,
-.context-status,
 .agent-run-row,
-.context-actions,
-.details-settings-button {
+.context-actions {
   display: flex;
   align-items: center;
-}
-.context-section-heading {
-  justify-content: space-between;
-  margin-bottom: 9px;
-}
-.context-section-heading > div {
-  gap: 8px;
-}
-.context-section-heading h2 {
-  margin: 0;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-.context-section-heading > span:last-child {
-  color: var(--text-3);
-  font: 10px var(--sans);
 }
 .context-option-list {
   display: grid;
@@ -438,21 +375,17 @@ button {
   background: var(--surface-2);
 }
 .context-option-copy,
-.agent-summary > span:last-child,
-.details-settings-button > span {
+.agent-summary > span:last-child {
   min-width: 0;
 }
 .context-option-copy strong,
 .context-option-copy small,
 .agent-summary strong,
-.agent-summary small,
-.details-settings-button strong,
-.details-settings-button small {
+.agent-summary small {
   display: block;
 }
 .context-option-copy strong,
-.agent-summary strong,
-.details-settings-button strong {
+.agent-summary strong {
   overflow: hidden;
   color: var(--text);
   font-size: 12px;
@@ -461,8 +394,7 @@ button {
   white-space: nowrap;
 }
 .context-option-copy small,
-.agent-summary small,
-.details-settings-button small {
+.agent-summary small {
   overflow: hidden;
   margin-top: 3px;
   color: var(--text-3);
@@ -482,12 +414,6 @@ button {
   color: var(--text-3);
   font-size: 11px;
   line-height: 1.55;
-}
-.context-status {
-  gap: 5px;
-}
-.context-status.is-ready {
-  color: var(--accent) !important;
 }
 .agent-summary {
   display: grid;
@@ -1003,22 +929,6 @@ button {
   flex: 0 0 auto;
   padding: 0;
 }
-.details-settings-button {
-  gap: 10px;
-  width: calc(100% - 32px);
-  min-height: 46px;
-  margin: auto 12px 12px;
-  padding: 8px 10px;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  background: transparent;
-  color: var(--text-2);
-  text-align: left;
-}
-.details-settings-button:hover {
-  color: var(--text);
-  background: var(--surface-2);
-}
 .settings-routing-note {
   margin: 0;
   padding: 11px 12px;
@@ -1275,30 +1185,70 @@ button {
   margin: 0;
   font-weight: 580;
 }
-.active-repository {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  margin-top: 7px;
-  color: var(--text-2);
-  font: 11px var(--sans);
-}
-.active-repository-branch {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 7px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  color: var(--text-3);
-  background: var(--surface-raised);
-}
 .main-header-actions {
   display: flex;
-  gap: 3px;
+  gap: 6px;
 }
 .main-header-actions > .icon-button {
   border: 1px solid var(--line);
+}
+.header-popover {
+  position: relative;
+}
+.header-popover-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--text-2);
+  background: transparent;
+  font: 500 12px var(--sans);
+  white-space: nowrap;
+}
+.header-popover-trigger:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+.header-popover-trigger[aria-expanded='true'] {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: var(--accent-soft);
+}
+.header-popover-trigger-label {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.header-popover-ready-dot {
+  color: var(--accent);
+}
+.header-popover-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  width: min(320px, calc(100vw - 24px));
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+}
+.header-popover-heading {
+  margin: 0;
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 .resource-center-nav {
   display: grid;
@@ -3370,9 +3320,6 @@ button {
   .workspace-panel.navigation-panel {
     width: 0 !important;
   }
-  .workspace-panel.details-panel {
-    width: 0 !important;
-  }
   .left-rail {
     position: fixed;
     z-index: 10;
@@ -3386,15 +3333,6 @@ button {
   .left-rail.is-open {
     display: flex;
     transform: translateX(0);
-  }
-  .channel-details-rail {
-    position: fixed;
-    z-index: 10;
-    inset: 48px 0 0 auto;
-    width: min(320px, 90vw);
-    height: calc(100dvh - 48px);
-    box-shadow: -16px 0 40px rgba(0, 0, 0, 0.35);
-    background: var(--surface);
   }
   .main-header,
   .timeline,
@@ -3567,8 +3505,8 @@ button {
   }
   .context-primary-action,
   .context-secondary-action,
-  .details-settings-button,
   .context-add-button,
+  .header-popover-trigger,
   .connection-dialog-form input,
   .connection-dialog-form select,
   .connection-dialog-form .context-primary-action {

@@ -2,11 +2,6 @@ import { useEffect, type Dispatch, type SetStateAction } from 'react';
 import { WorkspaceApiClient, type ApiRepositoryFile } from '@/lib/api-client';
 import { listHostRepositoryTree, readHostRepositoryFile } from '@/lib/host-agent-client';
 import type { WorkspaceTreeEntry } from '@/lib/workspace-state';
-import type { RepositorySummary } from '@/lib/workspace-state';
-
-export function resourceHasGit(resource: RepositorySummary | undefined): boolean {
-  return Boolean(resource) && resource?.provider !== 'folder';
-}
 
 export function loadRepositoryFile(input: {
   api: WorkspaceApiClient;

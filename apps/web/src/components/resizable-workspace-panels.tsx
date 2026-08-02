@@ -6,11 +6,9 @@ import type { ReactNode } from 'react';
 export function ResizableWorkspacePanels({
   navigation,
   main,
-  details,
 }: {
   navigation: ReactNode;
   main: ReactNode;
-  details: ReactNode;
 }) {
   return (
     <PanelGroup
@@ -32,27 +30,12 @@ export function ResizableWorkspacePanels({
       <Panel
         id="main"
         order={2}
-        defaultSize={64}
+        defaultSize={82}
         minSize={40}
         className="workspace-panel main-panel"
       >
         {main}
       </Panel>
-      {details ? (
-        <>
-          <PanelResizeHandle className="panel-resize-handle" aria-label="Resize details panel" />
-          <Panel
-            id="details"
-            order={3}
-            defaultSize={18}
-            minSize={16}
-            maxSize={28}
-            className="workspace-panel details-panel"
-          >
-            {details}
-          </Panel>
-        </>
-      ) : null}
     </PanelGroup>
   );
 }

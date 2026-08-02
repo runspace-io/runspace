@@ -1,7 +1,7 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { createHostFolderFixture, createLocalRepositoryFixture } from './local-repository';
 import { fillNewChannelResource } from './channel-dialog';
-import { openChannelContext } from './channel-context';
+import { openResourcePopover } from './channel-header-popovers';
 
 test.setTimeout(60_000);
 
@@ -17,7 +17,7 @@ test('switches repository trees, reads files, and runs visible terminal input', 
   await createWorkspace(page, workspaceName);
   await createChannel(page, channelName, firstURL);
 
-  const context = page.getByRole('complementary', { name: 'Channel context' });
+  const context = await openResourcePopover(page);
   await context.getByRole('button', { name: 'Connect resource' }).click();
   const dialog = page.getByRole('dialog');
   await dialog.getByRole('button', { name: /Remote Git/ }).click();
@@ -35,14 +35,15 @@ test('switches repository trees, reads files, and runs visible terminal input', 
 
   const firstName = repositoryName(firstURL);
   const secondName = repositoryName(secondURL);
-  await expect(repositoryItem(context, firstName)).toBeVisible();
-  await expect(repositoryItem(context, secondName)).toBeVisible();
+  const reopened = await openResourcePopover(page);
+  await expect(repositoryItem(reopened, firstName)).toBeVisible();
+  await expect(repositoryItem(reopened, secondName)).toBeVisible();
 
-  await selectRepositoryAndReadMarker(page, context, secondName, 'SECOND_REPOSITORY');
-  await selectRepositoryAndReadMarker(page, context, firstName, 'FIRST_REPOSITORY');
-  await selectRepositoryAndReadMarker(page, context, secondName, 'SECOND_REPOSITORY');
+  await selectRepositoryAndReadMarker(page, secondName, 'SECOND_REPOSITORY');
+  await selectRepositoryAndReadMarker(page, firstName, 'FIRST_REPOSITORY');
+  await selectRepositoryAndReadMarker(page, secondName, 'SECOND_REPOSITORY');
 
-  await openWorkspaceTerminal(page, context, secondName);
+  await openWorkspaceTerminal(page, secondName);
   const terminal = page.getByLabel('Agent terminal');
   const rows = terminal.locator('.xterm-rows');
   const input = terminal.locator('.xterm-helper-textarea');
@@ -75,15 +76,15 @@ test('switches local mirror trees and runs visible host terminal input', async (
   await channelDialog.getByRole('button', { name: 'Create channel' }).click();
   await page.getByRole('button', { name: `Open ${channelName}` }).click();
 
-  const context = await openChannelContext(page);
-  await connectLocalMirror(page, context, firstPath);
-  await connectLocalMirror(page, context, secondPath);
+  await connectLocalMirror(page, firstPath);
+  await connectLocalMirror(page, secondPath);
 
   const firstName = firstPath.split('\\').at(-1) ?? firstPath;
   const secondName = secondPath.split('\\').at(-1) ?? secondPath;
-  await selectRepositoryAndReadMarker(page, context, secondName, 'LOCAL_BETA');
-  await selectRepositoryAndReadMarker(page, context, firstName, 'LOCAL_ALPHA');
+  await selectRepositoryAndReadMarker(page, secondName, 'LOCAL_BETA');
+  await selectRepositoryAndReadMarker(page, firstName, 'LOCAL_ALPHA');
 
+  const context = await openResourcePopover(page);
   const repository = repositoryItem(context, firstName);
   await repository.getByRole('button', { name: 'Terminal' }).click();
   const terminalDialog = page.getByRole('dialog');
@@ -130,14 +131,10 @@ async function createChannel(page: Page, name: string, repositoryURL: string) {
   await fillNewChannelResource(dialog, repositoryURL);
   await dialog.getByRole('button', { name: 'Create channel' }).click();
   await page.getByRole('button', { name: `Open ${name}` }).click();
-  await openChannelContext(page);
 }
 
-async function connectLocalMirror(
-  page: Page,
-  context: ReturnType<Page['getByRole']>,
-  path: string,
-) {
+async function connectLocalMirror(page: Page, path: string) {
+  const context = await openResourcePopover(page);
   await context.getByRole('button', { name: 'Connect resource' }).click();
   const dialog = page.getByRole('dialog');
   await dialog.getByRole('button', { name: /Local folder/ }).click();
@@ -152,23 +149,16 @@ async function connectLocalMirror(
   await dialog.getByRole('button', { name: 'Done' }).click();
 }
 
-async function selectRepositoryAndReadMarker(
-  page: Page,
-  context: ReturnType<Page['getByRole']>,
-  repositoryName: string,
-  marker: string,
-) {
+async function selectRepositoryAndReadMarker(page: Page, repositoryName: string, marker: string) {
+  const context = await openResourcePopover(page);
   await repositoryItem(context, repositoryName).locator('.context-option').click();
   await expect(page.getByRole('treeitem', { name: 'README.md' })).toBeVisible();
   await page.getByRole('treeitem', { name: 'README.md' }).click();
   await expect(page.locator('.view-lines')).toContainText(marker);
 }
 
-async function openWorkspaceTerminal(
-  page: Page,
-  context: ReturnType<Page['getByRole']>,
-  repositoryName: string,
-) {
+async function openWorkspaceTerminal(page: Page, repositoryName: string) {
+  const context = await openResourcePopover(page);
   const repository = repositoryItem(context, repositoryName);
   await repository.getByRole('button', { name: 'Terminal' }).click();
   await page
@@ -181,6 +171,6 @@ function repositoryName(url: string): string {
   return url.split('/').at(-1) ?? url;
 }
 
-function repositoryItem(context: ReturnType<Page['getByRole']>, repositoryName: string) {
+function repositoryItem(context: Locator, repositoryName: string) {
   return context.locator('.repository-context-item').filter({ hasText: repositoryName });
 }

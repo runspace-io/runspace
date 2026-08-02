@@ -1,32 +1,6 @@
-import { Circle } from 'lucide-react';
 import type { ApiAgentInstallation, ApiChannel } from '@/lib/api-client';
 import { displayName } from '@/lib/message-identity';
 import { isRecord } from './channel-model';
-
-export function ContextHeading({
-  index,
-  title,
-  value,
-  ready = false,
-}: {
-  index: string;
-  title: string;
-  value: string;
-  ready?: boolean;
-}) {
-  return (
-    <div className="context-section-heading">
-      <div>
-        <span className="context-index">{index}</span>
-        <h2>{title}</h2>
-      </div>
-      <span className={`context-status ${ready ? 'is-ready' : ''}`}>
-        {ready && <Circle size={7} fill="currentColor" />}
-        {value}
-      </span>
-    </div>
-  );
-}
 
 export function ContextEmptyState({ title, body }: { title: string; body: string }) {
   return (

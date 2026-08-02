@@ -1,11 +1,5 @@
 import type { ComponentProps, ReactNode } from 'react';
-import {
-  GitBranch,
-  GitPullRequest,
-  PanelRightClose,
-  PanelRightOpen,
-  Settings2,
-} from 'lucide-react';
+import { GitPullRequest, Settings2 } from 'lucide-react';
 import { Timeline } from './timeline';
 import { ChannelComposer } from './channel-composer';
 import type { ApiGraphNode, WorkspaceApiClient } from '@/lib/api-client';
@@ -19,9 +13,6 @@ export function WorkspaceMainColumn({
   workspaceName,
   workspaceID,
   channelName,
-  repositoryName,
-  repositoryBranch,
-  repositoryGit,
   repositoryID,
   chatReady,
   timeline,
@@ -34,8 +25,7 @@ export function WorkspaceMainColumn({
   onRunAgent,
   onOpenGraphNode,
   onOpenChannelSettings,
-  channelDetailsOpen,
-  onToggleChannelDetails,
+  channelPopovers,
   onOpenPublish,
   terminalState,
   terminalRepositories,
@@ -47,9 +37,6 @@ export function WorkspaceMainColumn({
   workspaceName: string | undefined;
   workspaceID: string | undefined;
   channelName: string | undefined;
-  repositoryName: string | undefined;
-  repositoryBranch: string | undefined;
-  repositoryGit: boolean;
   repositoryID: string | undefined;
   chatReady: boolean;
   timeline: ComponentProps<typeof Timeline>['items'];
@@ -62,8 +49,7 @@ export function WorkspaceMainColumn({
   onRunAgent: () => void;
   onOpenGraphNode: (node: ApiGraphNode) => void;
   onOpenChannelSettings: () => void;
-  channelDetailsOpen: boolean;
-  onToggleChannelDetails: () => void;
+  channelPopovers?: ReactNode;
   onOpenPublish: () => void;
   terminalState: {
     sessions: readonly TerminalSession[];
@@ -85,13 +71,11 @@ export function WorkspaceMainColumn({
             {channelName ? `CHANNEL / ${channelName}` : 'WORKSPACE OVERVIEW'}
           </p>
           <h1>{channelName ?? workspaceName ?? 'Your workspace'}</h1>
-          <RepositoryIdentity name={repositoryName} branch={repositoryBranch} git={repositoryGit} />
         </div>
         <HeaderActions
           channelAvailable={Boolean(channelName)}
           onOpenChannelSettings={onOpenChannelSettings}
-          channelDetailsOpen={channelDetailsOpen}
-          onToggleChannelDetails={onToggleChannelDetails}
+          channelPopovers={channelPopovers}
           onOpenPublish={onOpenPublish}
           publishAvailable={publishAvailable}
         />
@@ -152,56 +136,22 @@ function ChannelEmptyState() {
   );
 }
 
-function RepositoryIdentity({
-  name,
-  branch,
-  git,
-}: {
-  name: string | undefined;
-  branch: string | undefined;
-  git: boolean;
-}) {
-  if (!name) return null;
-  return (
-    <div className="active-repository">
-      <span>{name}</span>
-      {git && (
-        <span className="active-repository-branch">
-          <GitBranch size={12} />
-          {branch}
-        </span>
-      )}
-    </div>
-  );
-}
-
 function HeaderActions({
   channelAvailable,
   onOpenChannelSettings,
-  channelDetailsOpen,
-  onToggleChannelDetails,
+  channelPopovers,
   onOpenPublish,
   publishAvailable,
 }: {
   channelAvailable: boolean;
   onOpenChannelSettings: () => void;
-  channelDetailsOpen: boolean;
-  onToggleChannelDetails: () => void;
+  channelPopovers?: ReactNode;
   onOpenPublish: () => void;
   publishAvailable: boolean;
 }) {
   return (
     <div className="main-header-actions">
-      {channelAvailable && (
-        <button
-          className="icon-button context-toggle-button"
-          onClick={onToggleChannelDetails}
-          aria-label={channelDetailsOpen ? 'Hide channel context' : 'Show channel context'}
-          title="Channel context"
-        >
-          {channelDetailsOpen ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
-        </button>
-      )}
+      {channelAvailable && channelPopovers}
       {channelAvailable && (
         <button
           className="icon-button"
