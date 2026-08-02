@@ -70,3 +70,38 @@ jobs:
       - uses: golangci/golangci-lint-action@v9
         with:
           version: v2.4
+
+  stack:
+    runs-on: ubuntu-latest
+    # Nothing exercised the documented first-run path, so a broken quick start
+    # survived unnoticed: the web container's healthcheck could never pass and
+    # `docker compose up` never came up at all. Bringing the stack up here is the
+    # cheapest way to keep that honest.
+    steps:
+      - uses: actions/checkout@v7
+      - name: Bring up Compose
+        run: |
+          node scripts/init-env.mjs
+          docker compose up -d --build
+      - name: Wait for every service to report healthy
+        run: |
+          for attempt in $(seq 1 60); do
+            status="$(docker compose ps --format '{{.Service}} {{.Health}}')"
+            unhealthy="$(echo "${status}" | awk '$2 != "healthy" && $2 != "" { print $1 }')"
+            if [ -z "${unhealthy}" ]; then
+              echo "all services healthy"; exit 0
+            fi
+            sleep 5
+          done
+          echo "still unhealthy: ${unhealthy}"
+          docker compose ps
+          docker compose logs --tail 80
+          exit 1
+      - name: Smoke test
+        run: node scripts/smoke-test.mjs
+      - name: Show logs on failure
+        if: failure()
+        run: docker compose logs --tail 200
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
