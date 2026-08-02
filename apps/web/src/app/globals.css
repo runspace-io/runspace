@@ -502,9 +502,13 @@ button {
 .agent-chat-catalog {
   display: grid;
   gap: 14px;
-  margin-top: 14px;
+}
+.agent-chat-catalog-loading {
+  margin: 14px 0 0;
   padding-top: 14px;
   border-top: 1px solid var(--line-soft);
+  color: var(--text-3);
+  font: 10px/1.45 var(--sans);
 }
 .agent-chat-group > header {
   display: flex;

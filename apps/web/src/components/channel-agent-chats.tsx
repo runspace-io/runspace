@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { MessageSquare, Share2 } from 'lucide-react';
 import type { ApiAgentTask, WorkspaceApiClient } from '@/lib/api-client';
 import { listLocalAgentChats, type LocalAgentChatSummary } from '@/lib/host-agent-client';
+import { DisclosureSection } from './disclosure-section';
 
 export type AgentChatSelection = {
   id: string;
@@ -53,27 +54,44 @@ export function ChannelAgentChats({
     catalog.refresh();
     onShared(selection);
   };
+  if (catalog.loading) {
+    return <p className="agent-chat-catalog-loading">Reading chat history…</p>;
+  }
   return (
-    <div className="agent-chat-catalog">
-      <ChatGroup
-        label="Shared with this channel"
-        empty={catalog.loading ? 'Reading shared sessions…' : 'No agent sessions shared yet.'}
-        chats={catalog.shared.map(sharedSelection)}
-        onOpen={onOpen}
-      />
-      <ChatGroup
-        label="My local chats"
-        empty={catalog.loading ? 'Reading this device…' : 'No private chats in this workspace.'}
-        chats={catalog.local.map(localSelection)}
-        onOpen={onOpen}
-        onShare={(chat) => {
-          const local = catalog.local.find((item) => item.id === chat.id);
-          if (local) void share(local).catch(catalog.setError);
-        }}
-      />
-      {catalog.error && <p className="agent-chat-catalog-error">{catalog.error.message}</p>}
-    </div>
+    <DisclosureSection
+      label="Chats"
+      summary={chatHistorySummary(catalog.shared.length, catalog.local.length)}
+      defaultOpen={catalog.shared.length > 0 || catalog.local.length > 0}
+    >
+      <div className="agent-chat-catalog">
+        <ChatGroup
+          label="Shared with this channel"
+          empty="No agent sessions shared yet."
+          chats={catalog.shared.map(sharedSelection)}
+          onOpen={onOpen}
+        />
+        <ChatGroup
+          label="My local chats"
+          empty="No private chats in this workspace."
+          chats={catalog.local.map(localSelection)}
+          onOpen={onOpen}
+          onShare={(chat) => {
+            const local = catalog.local.find((item) => item.id === chat.id);
+            if (local) void share(local).catch(catalog.setError);
+          }}
+        />
+        {catalog.error && <p className="agent-chat-catalog-error">{catalog.error.message}</p>}
+      </div>
+    </DisclosureSection>
   );
+}
+
+export function chatHistorySummary(sharedCount: number, localCount: number): string {
+  if (sharedCount === 0 && localCount === 0) return 'No chats yet';
+  const parts: string[] = [];
+  if (sharedCount > 0) parts.push(`${sharedCount} shared`);
+  if (localCount > 0) parts.push(`${localCount} private`);
+  return parts.join(' · ');
 }
 
 function ChatGroup({
