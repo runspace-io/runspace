@@ -1,6 +1,6 @@
 'use client';
 
-import { Bot, Check, Circle, Code2, GitBranch, GitCompare, Terminal } from 'lucide-react';
+import { Bot, Check, Code2, GitBranch, GitCompare, Terminal } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { ApiChannel } from '@/lib/api-client';
 import type { RepositorySummary } from '@/lib/workspace-state';
@@ -203,14 +203,7 @@ function AgentPopover({
         <>
           <Bot size={14} />
           <span className="header-popover-trigger-label">{available ? label : 'No agent'}</span>
-          {available && (
-            <Circle
-              size={6}
-              fill="currentColor"
-              className="header-popover-ready-dot"
-              aria-label="Ready"
-            />
-          )}
+          {available && <span className="status-dot online" />}
         </>
       )}
     >

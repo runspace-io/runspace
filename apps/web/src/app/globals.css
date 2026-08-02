@@ -18,6 +18,12 @@
   --amber: #e4b875;
   --red: #e48686;
   --radius: 5px;
+  /* One motion language, reused by every interactive/floating element instead
+     of each picking its own timing. */
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --dur: 160ms;
+  --shadow-float: 0 20px 56px rgba(0, 0, 0, 0.5);
+  --blur-glass: blur(20px) saturate(140%);
   /* aliases used by the chat primitives; keep one Runspace palette */
   --panel: var(--surface);
   --muted: var(--text-2);
@@ -56,12 +62,13 @@ button {
   cursor: pointer;
   color: inherit;
   transition:
-    background-color 120ms ease,
-    color 120ms ease,
-    border-color 120ms ease;
+    background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease),
+    transform 90ms var(--ease);
 }
 button:active:not(:disabled) {
-  filter: brightness(0.92);
+  transform: scale(0.97);
 }
 :where(button, a, input, select, textarea):focus-visible {
   outline: 2px solid var(--accent);
@@ -208,6 +215,18 @@ button:active:not(:disabled) {
 .status-dot.online {
   background: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
+  animation: status-dot-breathe 2.4s var(--ease) infinite;
+}
+@keyframes status-dot-breathe {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  50% {
+    opacity: 0.7;
+    box-shadow: 0 0 0 5px transparent;
+  }
 }
 .topbar-actions {
   gap: 2px;
@@ -269,7 +288,7 @@ button:active:not(:disabled) {
   width: 5px;
   background: transparent;
   cursor: col-resize;
-  transition: background 0.15s ease;
+  transition: background var(--dur) var(--ease);
 }
 .panel-resize-handle:hover,
 .panel-resize-handle[data-resize-handle-active] {
@@ -310,6 +329,7 @@ button:active:not(:disabled) {
 }
 .left-rail {
   border-right: 1px solid var(--line);
+  box-shadow: 8px 0 20px -12px rgba(0, 0, 0, 0.6);
 }
 .agent-run-row,
 .context-actions {
@@ -1185,6 +1205,7 @@ button:active:not(:disabled) {
   min-height: 76px;
   padding: 14px clamp(16px, 3vw, 40px);
   border-bottom: 1px solid var(--line-soft);
+  box-shadow: 0 8px 20px -12px rgba(0, 0, 0, 0.6);
 }
 .eyebrow {
   color: var(--text-3);
@@ -1222,6 +1243,7 @@ button:active:not(:disabled) {
   background: transparent;
   font: 500 12px var(--sans);
   white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 .header-popover-trigger:hover {
   color: var(--text);
@@ -1238,9 +1260,6 @@ button:active:not(:disabled) {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.header-popover-ready-dot {
-  color: var(--accent);
-}
 .header-popover-panel {
   position: absolute;
   top: calc(100% + 8px);
@@ -1254,8 +1273,10 @@ button:active:not(:disabled) {
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: var(--surface);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: var(--blur-glass);
+  -webkit-backdrop-filter: var(--blur-glass);
+  box-shadow: var(--shadow-float);
 }
 .header-popover-heading {
   margin: 0;
@@ -1667,14 +1688,17 @@ button:active:not(:disabled) {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
+  box-shadow: 0 10px 28px -10px rgba(0, 0, 0, 0.55);
   transition:
-    border-color 120ms ease,
-    box-shadow 120ms ease;
+    border-color var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
 }
 
 .channel-composer:focus-within {
   border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  box-shadow:
+    0 0 0 3px var(--accent-soft),
+    0 10px 28px -10px rgba(0, 0, 0, 0.55);
 }
 
 .composer-toolbar {
@@ -2448,14 +2472,6 @@ button:active:not(:disabled) {
   color: var(--text-3);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  button,
-  .message-row,
-  .message-row-header time,
-  .message-continuation-time {
-    transition: none;
-  }
-}
 .composer-mode-bar {
   display: flex;
   align-items: center;
@@ -2566,7 +2582,7 @@ button:active:not(:disabled) {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--shadow-float);
   padding: 20px;
 }
 .agent-task-surface {
@@ -3587,6 +3603,7 @@ button:active:not(:disabled) {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }
