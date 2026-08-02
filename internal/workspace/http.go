@@ -1,12 +1,15 @@
 package workspace
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"golang.org/x/sync/errgroup"
+
 	"github.com/runspace/runspace/internal/auth"
 )
 
@@ -86,18 +89,44 @@ func (h *Handler) listWorkspaces(w http.ResponseWriter, r *http.Request) {
 		writeError(w, err)
 		return
 	}
-	summaries := make([]workspaceSummary, 0, len(items))
-	for _, item := range items {
-		resources, resourceErr := h.service.ListResources(r.Context(), userID(r), item.ID)
-		if resourceErr != nil {
-			writeError(w, resourceErr)
-			return
-		}
-		summaries = append(summaries, workspaceSummary{
-			Workspace: item, ResourceCount: len(resources), RepositoryCount: len(resources),
-		})
+	summaries, err := h.workspaceSummaries(r.Context(), userID(r), items)
+	if err != nil {
+		writeError(w, err)
+		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"workspaces": summaries})
+}
+
+// workspaceSummaries counts each workspace's resources concurrently.
+//
+// This ran one resource-count query per workspace, sequentially, on every
+// workspace list load — an N+1 that costs roughly N round trips of wall time.
+// It only shows up at scale: a person with a handful of workspaces never
+// notices, a workspace accumulating a hundred does. Running the same calls
+// concurrently costs one round trip instead of N, without touching the
+// storage layer or its authorization checks.
+func (h *Handler) workspaceSummaries(
+	ctx context.Context, caller string, items []Workspace,
+) ([]workspaceSummary, error) {
+	summaries := make([]workspaceSummary, len(items))
+	var group errgroup.Group
+	for index, item := range items {
+		index, item := index, item
+		group.Go(func() error {
+			resources, err := h.service.ListResources(ctx, caller, item.ID)
+			if err != nil {
+				return err
+			}
+			summaries[index] = workspaceSummary{
+				Workspace: item, ResourceCount: len(resources), RepositoryCount: len(resources),
+			}
+			return nil
+		})
+	}
+	if err := group.Wait(); err != nil {
+		return nil, err
+	}
+	return summaries, nil
 }
 
 type workspaceSummary struct {
