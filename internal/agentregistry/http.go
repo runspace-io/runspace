@@ -5,10 +5,10 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/runspace/runspace/internal/auth"
 )
 
 type Handler struct{ service *Service }
@@ -254,7 +254,7 @@ func (h *Handler) upsert(writer http.ResponseWriter, request *http.Request) {
 }
 
 func userID(request *http.Request) string {
-	return strings.TrimSpace(request.Header.Get("X-User-ID"))
+	return auth.UserID(request)
 }
 
 func writeJSON(writer http.ResponseWriter, status int, value any) {

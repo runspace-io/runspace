@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/sha256"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -17,6 +16,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/runspace/runspace/internal/agent"
 	"github.com/runspace/runspace/internal/agentregistry"
+	"github.com/runspace/runspace/internal/auth"
 	"github.com/runspace/runspace/internal/collaboration"
 	"github.com/runspace/runspace/internal/contracts"
 	"github.com/runspace/runspace/internal/events"
@@ -65,7 +65,14 @@ func main() {
 		logger.Error("initialize API", "error", err)
 		return
 	}
-	router.Mount("/api/v1", api)
+	signer, err := auth.NewSigner(gatewayAuthSecret(), time.Now)
+	if err != nil {
+		logger.Error("initialize gateway authentication", "error", err)
+		return
+	}
+	// Everything under /api/v1 requires a verified token. /healthz and /metrics
+	// stay open so orchestrators can probe without a credential.
+	router.With(auth.Middleware(signer)).Mount("/api/v1", api)
 	router.Get("/healthz", healthHandler(logger))
 	router.Get("/metrics", metrics.Handler)
 	serve(logger, router)
@@ -175,15 +182,6 @@ func registerFileSyncRoutes(api chi.Router, workspaces *workspace.MemoryService,
 	}
 	filesync.NewHandler(service).RegisterRoutes(api)
 	return nil
-}
-
-func channelSecretKey() []byte {
-	value := os.Getenv("CHANNEL_SECRET_KEY")
-	if value == "" {
-		value = "runspace-local-channel-secret"
-	}
-	hash := sha256.Sum256([]byte(value))
-	return hash[:]
 }
 
 func newAgentRuntime() contracts.Agent {

@@ -9,6 +9,8 @@ export type ApiClientOptions = {
   fetcher?: FetchLike;
   sleep?: (delay: number) => Promise<void>;
   random?: () => number;
+  /** Overrides how a gateway token is obtained. Tests supply their own. */
+  tokenSource?: () => Promise<string>;
 };
 
 const DEFAULT_BASE_URL = 'http://localhost:8080/api/v1';
@@ -30,8 +32,12 @@ export class RetryingApiTransport {
   private readonly fetcher: FetchLike;
   private readonly sleep: (delay: number) => Promise<void>;
   private readonly random: () => number;
+  private readonly tokenSource: () => Promise<string>;
+  private cachedToken: { value: string; expiresAt: number } | undefined;
+  private pendingToken: Promise<string> | undefined;
 
   public constructor(options: ApiClientOptions = {}) {
+    this.tokenSource = options.tokenSource ?? fetchGatewayToken;
     this.baseURL = (options.baseURL ?? process.env.NEXT_PUBLIC_API_URL ?? DEFAULT_BASE_URL).replace(
       /\/$/,
       '',
@@ -61,10 +67,14 @@ export class RetryingApiTransport {
   }
 
   private async attempt<T>(path: string, init: RequestOptions): Promise<T> {
-    const response = await this.fetcher(`${this.baseURL}${path}`, {
-      ...init,
-      headers: { 'content-type': 'application/json', 'x-user-id': this.userID, ...init.headers },
-    });
+    let response = await this.send(path, init, await this.token());
+    if (response.status === 401) {
+      // The token is short lived, so the usual 401 is simply an expired one.
+      // Mint a fresh token and retry once before surfacing an auth failure.
+      this.pendingToken = undefined;
+      this.cachedToken = undefined;
+      response = await this.send(path, init, await this.token());
+    }
     if (response.ok) {
       if (response.status === 204) return undefined as T;
       return (await response.json()) as T;
@@ -72,6 +82,47 @@ export class RetryingApiTransport {
     const body = await response.text();
     throw new ApiError(response.status, apiErrorMessage(body, response.status));
   }
+
+  private send(path: string, init: RequestOptions, token: string) {
+    const authorization = token ? { authorization: `Bearer ${token}` } : {};
+    return this.fetcher(`${this.baseURL}${path}`, {
+      ...init,
+      headers: { 'content-type': 'application/json', ...authorization, ...init.headers },
+    });
+  }
+
+  /** The realtime socket needs the same token; it cannot set headers. */
+  public gatewayToken(): Promise<string> {
+    return this.token();
+  }
+
+  /** Cached so a burst of calls shares one exchange rather than racing. */
+  protected async token(): Promise<string> {
+    if (this.cachedToken && this.cachedToken.expiresAt > Date.now()) {
+      return this.cachedToken.value;
+    }
+    this.pendingToken ??= this.tokenSource()
+      .then((value) => {
+        // Refresh a little early so a request never travels with a token that
+        // expires in flight.
+        this.cachedToken = { value, expiresAt: Date.now() + 5 * 60 * 1000 };
+        return value;
+      })
+      .finally(() => {
+        this.pendingToken = undefined;
+      });
+    return this.pendingToken;
+  }
+}
+
+async function fetchGatewayToken(): Promise<string> {
+  const response = await fetch('/api/auth/gateway-token', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+  });
+  if (!response.ok) return '';
+  const payload = (await response.json()) as { token?: string };
+  return payload.token ?? '';
 }
 
 function apiErrorMessage(body: string, status: number): string {

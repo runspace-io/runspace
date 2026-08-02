@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/runspace/runspace/internal/auth"
 	"github.com/runspace/runspace/internal/workspace"
 )
 
@@ -20,7 +21,7 @@ func TestHTTPChatRoutesAreAuthorized(t *testing.T) {
 	service := NewMemoryService(nil, workspaceService)
 	router := NewHandler(service).Routes()
 	request := httptest.NewRequest(http.MethodPost, "/workspaces/"+workspaceModel.ID+"/threads", strings.NewReader(`{"title":"Ship it"}`))
-	request.Header.Set("X-User-ID", "alice")
+	request = request.WithContext(auth.WithUserID(request.Context(), "alice"))
 	response := httptest.NewRecorder()
 	router.ServeHTTP(response, request)
 	if response.Code != http.StatusCreated {
@@ -31,7 +32,7 @@ func TestHTTPChatRoutesAreAuthorized(t *testing.T) {
 		t.Fatal(err)
 	}
 	messagesRequest := httptest.NewRequest(http.MethodGet, "/threads/"+created.ID+"/messages?workspace_id="+workspaceModel.ID, nil)
-	messagesRequest.Header.Set("X-User-ID", "alice")
+	messagesRequest = messagesRequest.WithContext(auth.WithUserID(messagesRequest.Context(), "alice"))
 	messagesResponse := httptest.NewRecorder()
 	router.ServeHTTP(messagesResponse, messagesRequest)
 	if messagesResponse.Code != http.StatusOK || !strings.Contains(messagesResponse.Body.String(), `"messages":[]`) {
@@ -58,7 +59,7 @@ func TestHTTPThreadCanBeBoundToChannel(t *testing.T) {
 	}
 	router := NewHandler(service).Routes()
 	request := httptest.NewRequest(http.MethodPost, "/workspaces/"+workspaceModel.ID+"/threads", strings.NewReader(`{"title":"Backend chat","channel_id":"`+channel.ID+`"}`))
-	request.Header.Set("X-User-ID", "alice")
+	request = request.WithContext(auth.WithUserID(request.Context(), "alice"))
 	response := httptest.NewRecorder()
 	router.ServeHTTP(response, request)
 	if response.Code != http.StatusCreated || !strings.Contains(response.Body.String(), `"channel_id":"`+channel.ID+`"`) {
@@ -79,7 +80,7 @@ func TestHTTPChannelPatch(t *testing.T) {
 	}
 	router := NewHandler(service).Routes()
 	request := httptest.NewRequest(http.MethodPatch, "/workspaces/"+workspaceModel.ID+"/channels/"+channel.ID, strings.NewReader(`{"name":"api","config":{"agent":"acp"}}`))
-	request.Header.Set("X-User-ID", "alice")
+	request = request.WithContext(auth.WithUserID(request.Context(), "alice"))
 	response := httptest.NewRecorder()
 	router.ServeHTTP(response, request)
 	if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), `"name":"api"`) {
@@ -99,7 +100,7 @@ func TestHTTPChannelUsesResourceContract(t *testing.T) {
 		"/workspaces/"+workspaceModel.ID+"/channels",
 		strings.NewReader(`{"name":"api","resource_ids":["resource-1","resource-2"]}`),
 	)
-	request.Header.Set("X-User-ID", "alice")
+	request = request.WithContext(auth.WithUserID(request.Context(), "alice"))
 	response := httptest.NewRecorder()
 	router.ServeHTTP(response, request)
 	body := response.Body.String()

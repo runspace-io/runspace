@@ -79,7 +79,7 @@ export function TerminalWorkspace({
       </header>
       {sessions.map((session) => (
         <div className="terminal-session" hidden={session.id !== activeID} key={session.id}>
-          <TerminalPanel url={session.url} />
+          <TerminalPanel url={session.url} tokenSource={session.tokenSource} />
         </div>
       ))}
     </section>

@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/runspace/runspace/internal/auth"
 	"github.com/runspace/runspace/internal/workspace"
 )
 
@@ -54,7 +54,7 @@ type messageRequest struct {
 }
 
 func collaborationUserID(request *http.Request) string {
-	return strings.TrimSpace(request.Header.Get("X-User-ID"))
+	return auth.UserID(request)
 }
 
 func decodeCollaborationBody(request *http.Request, target any) error {

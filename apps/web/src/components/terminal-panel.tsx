@@ -4,7 +4,14 @@ import { useEffect, useRef } from 'react';
 import { Terminal } from '@xterm/xterm';
 import '@xterm/xterm/css/xterm.css';
 
-export function TerminalPanel({ url }: { url: string | undefined }) {
+export function TerminalPanel({
+  url,
+  tokenSource,
+}: {
+  url: string | undefined;
+  /** Gateway terminals need a token; host terminals are loopback and do not. */
+  tokenSource?: (() => Promise<string>) | undefined;
+}) {
   const host = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!host.current) return;
@@ -21,49 +28,59 @@ export function TerminalPanel({ url }: { url: string | undefined }) {
     }
     const endpoint = new URL(url);
     endpoint.searchParams.set('command', 'sh');
-    const socket = new WebSocket(endpoint);
     let pendingInput = '';
     let disposed = false;
+    // Gateway terminals authenticate with a short-lived token that has to be
+    // fetched first, so the socket appears a tick later. Input typed meanwhile
+    // buffers, exactly as it did while the socket was CONNECTING before.
+    let socket: WebSocket | undefined;
     terminal.write('\x1b[2mConnecting terminal…\x1b[0m\r\n');
-    socket.onopen = () => {
-      terminal.write('\x1b[32m$ connected\x1b[0m\r\n');
-      if (pendingInput) {
-        socket.send(JSON.stringify({ type: 'input', data: pendingInput }));
-        pendingInput = '';
-      }
-      terminal.focus();
-    };
-    socket.onmessage = (message) => {
-      try {
-        const frame = JSON.parse(message.data) as { type?: string; data?: string };
-        if (frame.data) {
-          terminal.write(frame.type === 'error' ? `\x1b[31m${frame.data}\x1b[0m` : frame.data);
+    void (async () => {
+      const token = await tokenSource?.();
+      if (disposed) return;
+      if (token) endpoint.searchParams.set('access_token', token);
+      const opened = new WebSocket(endpoint);
+      socket = opened;
+      opened.onopen = () => {
+        terminal.write('\x1b[32m$ connected\x1b[0m\r\n');
+        if (pendingInput) {
+          opened.send(JSON.stringify({ type: 'input', data: pendingInput }));
+          pendingInput = '';
         }
-      } catch {
-        terminal.write(message.data);
-      }
-    };
-    socket.onerror = () => {
-      terminal.write('\r\n\x1b[31mTerminal connection failed.\x1b[0m\r\n');
-    };
-    socket.onclose = () => {
-      if (!disposed) terminal.write('\r\n\x1b[2mTerminal disconnected.\x1b[0m\r\n');
-    };
+        terminal.focus();
+      };
+      opened.onmessage = (message) => {
+        try {
+          const frame = JSON.parse(message.data) as { type?: string; data?: string };
+          if (frame.data) {
+            terminal.write(frame.type === 'error' ? `\x1b[31m${frame.data}\x1b[0m` : frame.data);
+          }
+        } catch {
+          terminal.write(message.data);
+        }
+      };
+      opened.onerror = () => {
+        terminal.write('\r\n\x1b[31mTerminal connection failed.\x1b[0m\r\n');
+      };
+      opened.onclose = () => {
+        if (!disposed) terminal.write('\r\n\x1b[2mTerminal disconnected.\x1b[0m\r\n');
+      };
+    })();
     terminal.onData((data) => {
       echoTerminalInput(terminal, data);
       const input = data.replaceAll('\r', '\n');
-      if (socket.readyState === WebSocket.OPEN) {
+      if (socket?.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({ type: 'input', data: input }));
-      } else if (socket.readyState === WebSocket.CONNECTING) {
+      } else {
         pendingInput += input;
       }
     });
     return () => {
       disposed = true;
-      socket.close();
+      socket?.close();
       terminal.dispose();
     };
-  }, [url]);
+  }, [url, tokenSource]);
   return (
     <section className="terminal-panel" aria-label="Agent terminal">
       <div ref={host} />

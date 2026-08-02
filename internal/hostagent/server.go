@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/runspace/runspace/internal/auth"
 	"github.com/runspace/runspace/internal/filesync"
 	"github.com/runspace/runspace/internal/sandbox"
 	"github.com/runspace/runspace/internal/workspace"
@@ -38,6 +39,7 @@ type Server struct {
 	availabilityMu sync.Mutex
 	availability   map[string]resourceAvailability
 	messageSeq     atomic.Uint64
+	gatewaySigner  *auth.Signer
 }
 
 type RepositoryStatus struct {
@@ -51,16 +53,17 @@ type RepositoryStatus struct {
 
 func NewServer(engine filesync.Engine) (*Server, error) {
 	server := &Server{
-		engine:       engine,
-		httpClient:   &http.Client{Timeout: 2 * time.Minute},
-		gitBinary:    "git",
-		mirrors:      make(map[string]string),
-		deviceID:     ephemeralDeviceID(),
-		lookPath:     exec.LookPath,
-		agentLaunch:  make(map[string]agentLaunch),
-		sessions:     make(map[string]*agentSession),
-		newACPClient: defaultAgentClient,
-		availability: make(map[string]resourceAvailability),
+		engine:        engine,
+		httpClient:    &http.Client{Timeout: 2 * time.Minute},
+		gitBinary:     "git",
+		mirrors:       make(map[string]string),
+		deviceID:      ephemeralDeviceID(),
+		lookPath:      exec.LookPath,
+		agentLaunch:   make(map[string]agentLaunch),
+		sessions:      make(map[string]*agentSession),
+		newACPClient:  defaultAgentClient,
+		availability:  make(map[string]resourceAvailability),
+		gatewaySigner: newGatewaySigner(),
 	}
 	server.config = newLocalConfig(server.deviceID)
 	browser, err := sandbox.NewService(approvedMirrorResolver{server: server}, sandbox.Config{})

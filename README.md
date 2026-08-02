@@ -67,8 +67,10 @@ Open [http://localhost:3000](http://localhost:3000) and sign in with
 `admin` / `admin`.
 
 The secrets in `.env.example` are local-only. Before sharing a deployment,
-replace `LOCAL_AUTH_USERS`, `NEXTAUTH_SECRET`, `CHANNEL_SECRET_KEY`, and the
-database password. Everything else lives in `.env` — see
+replace `LOCAL_AUTH_USERS`, `NEXTAUTH_SECRET`, `GATEWAY_AUTH_SECRET`,
+`CHANNEL_SECRET_KEY`, and the database password. `GATEWAY_AUTH_SECRET` signs
+the short-lived tokens callers present to the gateway; the web app, the
+gateway, and the host agent must all share it. Everything else lives in `.env` — see
 [`.env.example`](.env.example) for the full list.
 
 To confirm the stack is healthy:

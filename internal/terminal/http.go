@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/websocket"
+	"github.com/runspace/runspace/internal/auth"
 )
 
 type Authorizer interface {
@@ -144,11 +145,11 @@ func decodeInput(payload []byte) []byte {
 	return payload
 }
 
+// Terminals are WebSockets, so the token arrives as ?access_token= and the auth
+// middleware verifies it. No ?user_id= fallback: claiming an identity must not
+// be enough to open a shell against someone else's checkout.
 func terminalUserID(request *http.Request) string {
-	if userID := strings.TrimSpace(request.Header.Get("X-User-ID")); userID != "" {
-		return userID
-	}
-	return strings.TrimSpace(request.URL.Query().Get("user_id"))
+	return auth.UserID(request)
 }
 
 func sameOrigin(request *http.Request) bool {

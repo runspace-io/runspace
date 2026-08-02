@@ -22,7 +22,7 @@ describe('retry policy', () => {
 });
 
 describe('ReconnectingRealtimeSocket', () => {
-  it('reconnects indefinitely and preserves the last event cursor', () => {
+  it('reconnects indefinitely and preserves the last event cursor', async () => {
     const sockets: RealtimeSocket[] = [];
     const urls: string[] = [];
     const scheduled: Array<() => void> = [];
@@ -47,12 +47,17 @@ describe('ReconnectingRealtimeSocket', () => {
     });
 
     client.start();
-    expect(urls[0]).toContain('user_id=dev-user');
+    // Opening the socket now awaits a gateway token, so the connection is made
+    // on a later tick. Identity travels as ?access_token=, never ?user_id=.
+    await Promise.resolve();
+    expect(urls[0]).toContain('workspace_id=workspace-1');
+    expect(urls[0]).not.toContain('user_id=');
     sockets[0]!.readyState = 1;
     sockets[0]!.onopen?.();
     sockets[0]!.onmessage?.({ data: JSON.stringify({ type: 'event', event: { id: 'event-9' } }) });
     sockets[0]!.onclose?.();
     scheduled[0]!();
+    await Promise.resolve();
     expect(sockets).toHaveLength(2);
     expect(statuses).toContain('reconnecting');
     expect(client.lastEventID).toBe('event-9');

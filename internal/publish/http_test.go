@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/runspace/runspace/internal/auth"
 	"github.com/runspace/runspace/internal/contracts"
 	"github.com/runspace/runspace/internal/workspace"
 )
@@ -49,7 +50,7 @@ func TestPublishHandlerResolvesConnectedRepository(t *testing.T) {
 	catalog := publishCatalog{items: []workspace.Repository{{ID: "repo-1", FullName: "acme/app", DefaultBranch: "main", CreatedAt: time.Now()}}}
 	handler := NewHandler(service, publishAuth{}, catalog, publishResolver{path: "/checkout/repo-1"})
 	request := httptest.NewRequest(http.MethodPost, "/workspaces/ws/runs/run/publish", strings.NewReader(`{"repository_id":"repo-1","repository_path":"/evil","branch":"forge/x","base":"main","commit_message":"x","title":"T"}`))
-	request.Header.Set("X-User-ID", "alice")
+	request = request.WithContext(auth.WithUserID(request.Context(), "alice"))
 	response := httptest.NewRecorder()
 	router := chi.NewRouter()
 	handler.RegisterRoutes(router)
@@ -58,7 +59,7 @@ func TestPublishHandlerResolvesConnectedRepository(t *testing.T) {
 		t.Fatalf("status=%d path=%q", response.Code, git.path)
 	}
 	request = httptest.NewRequest(http.MethodPost, "/workspaces/ws/runs/run-2/publish", strings.NewReader(`{"repository_id":"repo-1","branch":"forge/x","base":"main","commit_message":"x","title":"T"}`))
-	request.Header.Set("X-User-ID", "alice")
+	request = request.WithContext(auth.WithUserID(request.Context(), "alice"))
 	response = httptest.NewRecorder()
 	router.ServeHTTP(response, request)
 	if response.Code != http.StatusAccepted || git.path != "/checkout/repo-1" {
@@ -69,7 +70,7 @@ func TestPublishHandlerResolvesConnectedRepository(t *testing.T) {
 func TestPublishHandlerRejectsDisconnectedRepository(t *testing.T) {
 	handler := NewHandler(New(&publishGit{}, publishRemote{}), publishAuth{}, publishCatalog{}, publishResolver{path: "/checkout"})
 	request := httptest.NewRequest(http.MethodPost, "/workspaces/ws/runs/run/publish", strings.NewReader(`{"repository_id":"missing","branch":"forge/x","base":"main","commit_message":"x","title":"T"}`))
-	request.Header.Set("X-User-ID", "alice")
+	request = request.WithContext(auth.WithUserID(request.Context(), "alice"))
 	response := httptest.NewRecorder()
 	router := chi.NewRouter()
 	handler.RegisterRoutes(router)

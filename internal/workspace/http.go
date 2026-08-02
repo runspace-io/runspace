@@ -1,28 +1,19 @@
 package workspace
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/runspace/runspace/internal/auth"
 )
 
 // Handler exposes the workspace service over the versioned REST API. The
-// authenticated user is supplied by the auth middleware through X-User-ID in
-// production middleware should set the same request context value.
+// caller's identity comes from the verified token the auth middleware puts on
+// the request context, never from a header the client controls.
 type Handler struct{ service Service }
-
-type contextKey struct{}
-
-// WithUserID lets authentication middleware pass the verified identity without
-// exposing it as a client-controlled header.
-func WithUserID(ctx context.Context, id string) context.Context {
-	return context.WithValue(ctx, contextKey{}, strings.TrimSpace(id))
-}
 
 func NewHandler(service Service) *Handler { return &Handler{service: service} }
 
@@ -54,12 +45,7 @@ type memberRequest struct {
 	Role   Role   `json:"role"`
 }
 
-func userID(r *http.Request) string {
-	if id, ok := r.Context().Value(contextKey{}).(string); ok && id != "" {
-		return id
-	}
-	return strings.TrimSpace(r.Header.Get("X-User-ID"))
-}
+func userID(r *http.Request) string { return auth.UserID(r) }
 func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)

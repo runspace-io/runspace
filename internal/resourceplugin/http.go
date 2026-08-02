@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/runspace/runspace/internal/auth"
 	"github.com/runspace/runspace/internal/workspace"
 )
 
@@ -58,7 +58,7 @@ func (h *Handler) connect(writer http.ResponseWriter, request *http.Request) {
 }
 
 func callerID(request *http.Request) string {
-	return strings.TrimSpace(request.Header.Get("X-User-ID"))
+	return auth.UserID(request)
 }
 
 func writeJSON(writer http.ResponseWriter, status int, value any) {

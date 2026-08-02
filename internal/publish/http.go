@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/runspace/runspace/internal/auth"
 	"github.com/runspace/runspace/internal/sandbox"
 	"github.com/runspace/runspace/internal/workspace"
 )
@@ -45,7 +46,7 @@ type requestBody struct {
 
 func (h *Handler) publish(writer http.ResponseWriter, request *http.Request) {
 	workspaceID := chi.URLParam(request, "workspaceID")
-	userID := strings.TrimSpace(request.Header.Get("X-User-ID"))
+	userID := auth.UserID(request)
 	if h.authorizer == nil {
 		writePublishError(writer, errors.New("authorization required"))
 		return

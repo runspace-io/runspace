@@ -105,6 +105,9 @@ services:
       ACP_COMMAND: ${ACP_COMMAND:-}
       HOST_AGENT_URL: ${HOST_AGENT_URL:-http://host.docker.internal:7799}
       CHANNEL_SECRET_KEY: ${CHANNEL_SECRET_KEY:-runspace-local-channel-secret}
+      # Shared with the web app, which mints the tokens callers present. The
+      # gateway will not start without it.
+      GATEWAY_AUTH_SECRET: ${GATEWAY_AUTH_SECRET:-${NEXTAUTH_SECRET:-runspace-development-secret-change-me}}
       DATABASE_URL: postgres://${POSTGRES_USER:-forge}:${POSTGRES_PASSWORD:-forge-local-password}@postgres:5432/${POSTGRES_DB:-forge}?sslmode=disable
       NATS_URL: nats://nats:4222
       GITHUB_API_URL: ${GITHUB_API_URL:-https://api.github.com}
@@ -161,6 +164,7 @@ services:
       HOSTNAME: 0.0.0.0
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-runspace-development-secret-change-me}
+      GATEWAY_AUTH_SECRET: ${GATEWAY_AUTH_SECRET:-${NEXTAUTH_SECRET:-runspace-development-secret-change-me}}
       LOCAL_AUTH_ENABLED: ${LOCAL_AUTH_ENABLED:-true}
       LOCAL_AUTH_USERS: ${LOCAL_AUTH_USERS:-admin:admin,alice:alice,nahid:nahid123}
       NEXT_PUBLIC_USER_ID: ${NEXT_PUBLIC_USER_ID:-admin}

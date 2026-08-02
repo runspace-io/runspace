@@ -1,3 +1,4 @@
+import { asUser } from './gateway-token';
 import { expect, test, type APIRequestContext } from '@playwright/test';
 
 test.setTimeout(60_000);
@@ -7,7 +8,7 @@ const INVITEE_PASSWORD = process.env.E2E_MEMBER_PASSWORD ?? 'nahid123';
 
 async function createWorkspace(request: APIRequestContext, name: string) {
   const created = await request.post('/gateway/workspaces', {
-    headers: { 'X-User-ID': 'admin' },
+    headers: asUser('admin'),
     data: { name: `${name} ${Date.now()}` },
   });
   expect(created.ok(), await created.text()).toBe(true);
@@ -16,7 +17,7 @@ async function createWorkspace(request: APIRequestContext, name: string) {
 
 async function createInvite(request: APIRequestContext, workspaceID: string) {
   const invited = await request.post(`/gateway/workspaces/${workspaceID}/invitations`, {
-    headers: { 'X-User-ID': 'admin' },
+    headers: asUser('admin'),
     data: { role: 'member' },
   });
   expect(invited.ok(), await invited.text()).toBe(true);
@@ -43,7 +44,7 @@ test('an invited person joins by opening the link', async ({ page, request }) =>
 
   await expect(page).toHaveURL(/\/$/, { timeout: 15_000 });
   const visible = await request.get('/gateway/workspaces', {
-    headers: { 'X-User-ID': INVITEE },
+    headers: asUser(INVITEE),
   });
   const payload = (await visible.json()) as { workspaces: Array<{ id: string }> };
   expect(payload.workspaces.some((item) => item.id === workspace.id)).toBe(true);
@@ -55,7 +56,7 @@ test('a spent link is refused', async ({ page, request }) => {
   const token = await createInvite(request, workspace.id);
 
   const accepted = await request.post('/gateway/invitations/accept', {
-    headers: { 'X-User-ID': 'alice' },
+    headers: asUser('alice'),
     data: { token },
   });
   expect(accepted.ok()).toBe(true);

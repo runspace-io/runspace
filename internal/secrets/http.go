@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/runspace/runspace/internal/auth"
 	"github.com/runspace/runspace/internal/collaboration"
 )
 
@@ -51,7 +51,7 @@ func (h *Handler) delete(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
-func userID(r *http.Request) string { return strings.TrimSpace(r.Header.Get("X-User-ID")) }
+func userID(r *http.Request) string { return auth.UserID(r) }
 func writeJSON(w http.ResponseWriter, status int, value any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)

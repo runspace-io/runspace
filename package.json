@@ -17,7 +17,7 @@
     "stack:down": "docker compose down",
     "stack:logs": "docker compose logs -f",
     "stack:smoke": "node scripts/smoke-test.mjs",
-    "host-agent": "go run ./cmd/host-agent",
+    "host-agent": "node scripts/host-agent.mjs",
     "format:check": "prettier --check .",
     "format": "prettier --write .",
     "quality:files": "node scripts/check-file-size.mjs",

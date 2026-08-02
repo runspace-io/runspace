@@ -129,6 +129,7 @@ function useRealtime(
     }
     const client = new ReconnectingRealtimeSocket({
       url: api.realtimeURL(workspaceID),
+      tokenSource: () => api.gatewayToken(),
       workspaceID,
       userID: api.actorID,
       onStatus: state.setRealtimeStatus,

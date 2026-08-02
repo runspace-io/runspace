@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/runspace/runspace/internal/auth"
 	"github.com/runspace/runspace/internal/git"
 	"github.com/runspace/runspace/internal/workspace"
 )
@@ -85,7 +85,7 @@ func (h *Handler) diffRoot(request *http.Request) (string, error) {
 		return "", errors.New("change provider unavailable")
 	}
 	workspaceID, repositoryID := chi.URLParam(request, "workspaceID"), chi.URLParam(request, "repositoryID")
-	repositories, err := h.catalog.ListRepositories(request.Context(), request.Header.Get("X-User-ID"), workspaceID)
+	repositories, err := h.catalog.ListRepositories(request.Context(), auth.UserID(request), workspaceID)
 	if err != nil {
 		return "", err
 	}
@@ -106,7 +106,7 @@ func (h *Handler) changes(writer http.ResponseWriter, request *http.Request) {
 		writeError(writer, errors.New("change provider unavailable"))
 		return
 	}
-	repositories, err := h.catalog.ListRepositories(request.Context(), request.Header.Get("X-User-ID"), chi.URLParam(request, "workspaceID"))
+	repositories, err := h.catalog.ListRepositories(request.Context(), auth.UserID(request), chi.URLParam(request, "workspaceID"))
 	if err != nil {
 		writeError(writer, err)
 		return
@@ -165,7 +165,7 @@ func (h *Handler) authorize(request *http.Request, workspaceID string) error {
 	if h.authorizer == nil {
 		return workspace.ErrUnauthorized
 	}
-	return h.authorizer.CanRead(request.Context(), workspaceID, strings.TrimSpace(request.Header.Get("X-User-ID")))
+	return h.authorizer.CanRead(request.Context(), workspaceID, auth.UserID(request))
 }
 
 func writeJSON(writer http.ResponseWriter, status int, value any) {

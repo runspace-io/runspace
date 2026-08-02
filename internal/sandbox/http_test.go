@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/runspace/runspace/internal/auth"
 	"github.com/runspace/runspace/internal/git"
 	"github.com/runspace/runspace/internal/workspace"
 )
@@ -21,7 +22,7 @@ func TestHandlerAuthorizesAndReads(t *testing.T) {
 	}
 	handler := NewHandler(service, authorizer, nil, nil)
 	request := httptest.NewRequest(http.MethodGet, "/workspaces/"+ws.ID+"/repositories/repo-1/file?path=src/main.go", nil)
-	request.Header.Set("X-User-ID", "alice")
+	request = request.WithContext(auth.WithUserID(request.Context(), "alice"))
 	recorder := httptest.NewRecorder()
 	handler.Routes().ServeHTTP(recorder, request)
 	if recorder.Code != 200 {
@@ -44,7 +45,7 @@ func TestHandlerRejectsAnonymousAndTraversal(t *testing.T) {
 		t.Fatalf("anonymous status = %d", recorder.Code)
 	}
 	request := httptest.NewRequest(http.MethodGet, "/workspaces/"+ws.ID+"/repositories/repo-1/file?path=..%2Fsecret", nil)
-	request.Header.Set("X-User-ID", "alice")
+	request = request.WithContext(auth.WithUserID(request.Context(), "alice"))
 	recorder = httptest.NewRecorder()
 	handler.Routes().ServeHTTP(recorder, request)
 	if recorder.Code != 400 {
@@ -84,7 +85,7 @@ func TestHandlerReturnsStructuredChangesAndContents(t *testing.T) {
 		"/workspaces/ws/repositories/repo-1/changes",
 		nil,
 	)
-	changes.Header.Set("X-User-ID", "alice")
+	changes = changes.WithContext(auth.WithUserID(changes.Context(), "alice"))
 	recorder := httptest.NewRecorder()
 	handler.Routes().ServeHTTP(recorder, changes)
 	var changeBody struct {
@@ -103,7 +104,7 @@ func TestHandlerReturnsStructuredChangesAndContents(t *testing.T) {
 		"/workspaces/ws/repositories/repo-1/diff?path=src%2Fapp.ts",
 		nil,
 	)
-	diff.Header.Set("X-User-ID", "alice")
+	diff = diff.WithContext(auth.WithUserID(diff.Context(), "alice"))
 	recorder = httptest.NewRecorder()
 	handler.Routes().ServeHTTP(recorder, diff)
 	var diffBody map[string]string

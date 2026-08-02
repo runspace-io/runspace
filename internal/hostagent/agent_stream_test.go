@@ -7,10 +7,12 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"testing"
 
 	"github.com/runspace/runspace/internal/agentregistry"
+	"github.com/runspace/runspace/internal/auth"
 	acpruntime "github.com/runspace/runspace/internal/runtime"
 )
 
@@ -74,9 +76,15 @@ func gatewayRecorder(t *testing.T) (*httptest.Server, func() []capturedPush) {
 			}
 			var update taskStreamUpdate
 			_ = json.Unmarshal(body, &update)
+			// The gateway authenticates the push, so assert on the signed
+			// subject rather than a header any client could set.
+			claims, err := testGatewaySigner(t).Verify(bearerToken(request))
+			if err != nil {
+				t.Errorf("host agent push was not authenticated: %v", err)
+			}
 			mu.Lock()
 			pushes = append(pushes, capturedPush{
-				taskID: request.URL.Path, userID: request.Header.Get("X-User-ID"), update: update,
+				taskID: request.URL.Path, userID: claims.Subject, update: update,
 			})
 			mu.Unlock()
 			writer.WriteHeader(http.StatusAccepted)
@@ -89,12 +97,28 @@ func gatewayRecorder(t *testing.T) (*httptest.Server, func() []capturedPush) {
 	}
 }
 
+const testGatewaySecret = "hostagent-test-secret"
+
+func testGatewaySigner(t *testing.T) *auth.Signer {
+	t.Helper()
+	signer, err := auth.NewSigner(testGatewaySecret, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return signer
+}
+
+func bearerToken(request *http.Request) string {
+	return strings.TrimPrefix(request.Header.Get("Authorization"), "Bearer ")
+}
+
 func streamingServer(t *testing.T, gatewayURL string, chunks []string) *Server {
 	t.Helper()
 	server, err := NewServer(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
+	server.gatewaySigner = testGatewaySigner(t)
 	server.configFile = t.TempDir() + "/runspace-local.json"
 	resourcePath := t.TempDir()
 	binding := LocalResourceBinding{

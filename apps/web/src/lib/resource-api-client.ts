@@ -37,7 +37,8 @@ export class ResourceApiClient extends RepositoryReviewClient {
       window.location.origin,
     );
     url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-    url.searchParams.set('user_id', this.userID);
+    // Identity rides as ?access_token=, appended when the socket opens: a
+    // browser cannot set headers on a WebSocket, and the token is short lived.
     return url.toString();
   }
 

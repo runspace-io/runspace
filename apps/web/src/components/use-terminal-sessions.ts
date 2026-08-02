@@ -11,6 +11,8 @@ export type TerminalSession = {
   repositoryName: string;
   url: string;
   target: 'workspace' | 'host';
+  /** Only gateway terminals need a token; host terminals are loopback. */
+  tokenSource?: (() => Promise<string>) | undefined;
   accessLevel?: HostAgentStatus['access_level'];
 };
 
@@ -39,7 +41,7 @@ export function useTerminalSessions(api: WorkspaceApiClient, workspaceID: string
           ? hostTerminalURL(repository.id, accessLevel, api.actorID)
           : api.terminalURL(workspaceID, repository.id),
       target,
-      ...(target === 'host' ? { accessLevel } : {}),
+      ...(target === 'host' ? { accessLevel } : { tokenSource: () => api.gatewayToken() }),
     };
     setSessions((current) => [...current, session]);
     setActiveID(id);

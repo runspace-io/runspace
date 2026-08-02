@@ -88,7 +88,12 @@ func (s *Server) gateway(ctx context.Context, endpoint, userID string, body any,
 		return err
 	}
 	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("X-User-ID", strings.TrimSpace(userID))
+	// The gateway no longer trusts a claimed identity, so sign one. Without a
+	// configured secret the push is attempted unauthenticated and the gateway
+	// rejects it, which is the correct failure rather than a silent bypass.
+	if token, err := s.gatewayToken(strings.TrimSpace(userID)); err == nil {
+		request.Header.Set("Authorization", "Bearer "+token)
+	}
 	response, err := s.httpClient.Do(request)
 	if err != nil {
 		return err

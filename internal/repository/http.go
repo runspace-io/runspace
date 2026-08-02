@@ -3,9 +3,9 @@ package repository
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/runspace/runspace/internal/auth"
 )
 
 type Handler struct{ service *Service }
@@ -16,7 +16,7 @@ func (h *Handler) RegisterRoutes(router chi.Router) {
 	router.Post("/workspaces/{workspaceID}/repositories/{repositoryID}/clone", h.clone)
 }
 func (h *Handler) clone(writer http.ResponseWriter, request *http.Request) {
-	result, err := h.service.Clone(request.Context(), strings.TrimSpace(request.Header.Get("X-User-ID")), chi.URLParam(request, "workspaceID"), chi.URLParam(request, "repositoryID"))
+	result, err := h.service.Clone(request.Context(), auth.UserID(request), chi.URLParam(request, "workspaceID"), chi.URLParam(request, "repositoryID"))
 	if err != nil {
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(http.StatusBadRequest)

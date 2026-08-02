@@ -34,10 +34,10 @@ func (d *durable) DeleteEncrypted(_ context.Context, channel, name string) error
 	return nil
 }
 
-type auth struct{}
+type fakeAuthorizer struct{}
 
-func (auth) CanRead(context.Context, string, string) error  { return nil }
-func (auth) CanWrite(context.Context, string, string) error { return nil }
+func (fakeAuthorizer) CanRead(context.Context, string, string) error  { return nil }
+func (fakeAuthorizer) CanWrite(context.Context, string, string) error { return nil }
 
 type channels struct {
 	items map[string]collaboration.Channel
@@ -56,7 +56,7 @@ func TestSecretsAreRedactedAndInherited(t *testing.T) {
 	resolver := channels{items: map[string]collaboration.Channel{
 		"parent": {ID: "parent", WorkspaceID: "ws"}, "child": {ID: "child", WorkspaceID: "ws", ParentID: "parent"},
 	}}
-	service, err := New(resolver, auth{}, make([]byte, 32), clock)
+	service, err := New(resolver, fakeAuthorizer{}, make([]byte, 32), clock)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +78,7 @@ func TestSecretsAreRedactedAndInherited(t *testing.T) {
 
 func TestSecretsWriteThroughDurableStore(t *testing.T) {
 	resolver := channels{items: map[string]collaboration.Channel{"channel": {ID: "channel", WorkspaceID: "ws"}}}
-	service, err := New(resolver, auth{}, make([]byte, 32), time.Now)
+	service, err := New(resolver, fakeAuthorizer{}, make([]byte, 32), time.Now)
 	if err != nil {
 		t.Fatal(err)
 	}

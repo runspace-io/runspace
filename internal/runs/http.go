@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/runspace/runspace/internal/auth"
 	"github.com/runspace/runspace/internal/collaboration"
 	"github.com/runspace/runspace/internal/contracts"
 	"github.com/runspace/runspace/internal/sandbox"
@@ -67,7 +68,7 @@ func (h *Handler) create(writer http.ResponseWriter, request *http.Request) {
 		RunID: payload.RunID, ThreadID: chi.URLParam(request, "threadID"),
 		WorkspaceID: payload.WorkspaceID, Repository: payload.Repository, Prompt: payload.Prompt,
 	}
-	userID := strings.TrimSpace(request.Header.Get("X-User-ID"))
+	userID := auth.UserID(request)
 	if err := h.resolveSpawnContext(request.Context(), userID, &spawn); err != nil {
 		writeRunError(writer, err)
 		return
@@ -96,7 +97,7 @@ func (h *Handler) list(writer http.ResponseWriter, request *http.Request) {
 			return
 		}
 	} else if h.chat != nil {
-		userID := strings.TrimSpace(request.Header.Get("X-User-ID"))
+		userID := auth.UserID(request)
 		threads, err := h.chat.ListThreads(request.Context(), userID, strings.TrimSpace(request.URL.Query().Get("workspace_id")))
 		if err != nil {
 			writeRunError(writer, err)
@@ -188,7 +189,7 @@ func (h *Handler) retry(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	spawn := retrySpawnRequest(old, payload.RunID)
-	userID := strings.TrimSpace(request.Header.Get("X-User-ID"))
+	userID := auth.UserID(request)
 	if err := h.assignWorkingDirectory(request.Context(), userID, &spawn); err != nil {
 		writeRunError(writer, err)
 		return
@@ -236,7 +237,7 @@ func (h *Handler) authorize(request *http.Request, workspaceID string, write boo
 	if h.authorizer == nil {
 		return workspace.ErrUnauthorized
 	}
-	userID := strings.TrimSpace(request.Header.Get("X-User-ID"))
+	userID := auth.UserID(request)
 	if write {
 		return h.authorizer.CanWrite(request.Context(), workspaceID, userID)
 	}

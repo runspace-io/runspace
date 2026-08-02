@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/runspace/runspace/internal/auth"
 	"github.com/runspace/runspace/internal/collaboration"
 )
 
@@ -21,7 +22,7 @@ func TestMCPListsRunspaceGraphTools(t *testing.T) {
 	request := httptest.NewRequest(
 		http.MethodPost, "/workspaces/ws_1/mcp", bytes.NewReader(body),
 	)
-	request.Header.Set("X-User-ID", "nahid")
+	request = request.WithContext(auth.WithUserID(request.Context(), "nahid"))
 	recorder := httptest.NewRecorder()
 	router.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
@@ -54,7 +55,7 @@ func TestGraphContextAcceptsEncodedNamespacedNodeID(t *testing.T) {
 	request := httptest.NewRequest(
 		http.MethodGet, "/workspaces/ws_1/graph/nodes/artifact%3Aui_1", nil,
 	)
-	request.Header.Set("X-User-ID", "nahid")
+	request = request.WithContext(auth.WithUserID(request.Context(), "nahid"))
 	response := httptest.NewRecorder()
 	router.ServeHTTP(response, request)
 	if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), "artifact:ui_1") {
@@ -93,7 +94,7 @@ func TestMCPSendsMessageAsConnectedAgent(t *testing.T) {
 		"/workspaces/ws_1/mcp?thread_id=thread_1&agent_id=local_agent_codex",
 		bytes.NewReader(body),
 	)
-	request.Header.Set("X-User-ID", "nahid")
+	request = request.WithContext(auth.WithUserID(request.Context(), "nahid"))
 	response := httptest.NewRecorder()
 	router.ServeHTTP(response, request)
 	if response.Code != http.StatusOK || messages.agentID != "local_agent_codex" ||
@@ -123,7 +124,7 @@ func TestMCPValidatesAndSharesInteractiveArtifact(t *testing.T) {
 		"/workspaces/ws_1/mcp?thread_id=thread_1&agent_id=local_agent_codex",
 		bytes.NewReader(body),
 	)
-	request.Header.Set("X-User-ID", "nahid")
+	request = request.WithContext(auth.WithUserID(request.Context(), "nahid"))
 	response := httptest.NewRecorder()
 	router.ServeHTTP(response, request)
 	if response.Code != http.StatusOK || !strings.HasPrefix(messages.body, "[[ui:artifact:") {
@@ -162,7 +163,7 @@ func TestMCPReadsCurrentDiscussionMessages(t *testing.T) {
 	request := httptest.NewRequest(
 		http.MethodPost, "/workspaces/ws_1/mcp?thread_id=thread_1", bytes.NewReader(body),
 	)
-	request.Header.Set("X-User-ID", "nahid")
+	request = request.WithContext(auth.WithUserID(request.Context(), "nahid"))
 	response := httptest.NewRecorder()
 	router.ServeHTTP(response, request)
 	if response.Code != http.StatusOK ||
@@ -183,7 +184,7 @@ func TestMCPThreadScopeDefaultsCreatedWork(t *testing.T) {
 	request := httptest.NewRequest(
 		http.MethodPost, "/workspaces/ws_1/mcp?thread_id=thread_1", bytes.NewReader(body),
 	)
-	request.Header.Set("X-User-ID", "nahid")
+	request = request.WithContext(auth.WithUserID(request.Context(), "nahid"))
 	recorder := httptest.NewRecorder()
 	router.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {

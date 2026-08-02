@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/websocket"
+	"github.com/runspace/runspace/internal/auth"
 	"github.com/runspace/runspace/internal/contracts"
 )
 
@@ -78,13 +79,12 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	h.stream(request, connection, events)
 }
 
-// Browser WebSocket clients cannot set arbitrary headers; the query fallback
-// keeps the transport usable while the production session middleware evolves.
+// Browser WebSocket clients cannot set headers, so their token arrives as
+// ?access_token= and the auth middleware verifies it before this runs. There is
+// deliberately no ?user_id= fallback: that was the same "claim any identity"
+// hole as the old X-User-ID header.
 func realtimeUserID(request *http.Request) string {
-	if userID := strings.TrimSpace(request.Header.Get("X-User-ID")); userID != "" {
-		return userID
-	}
-	return strings.TrimSpace(request.URL.Query().Get("user_id"))
+	return auth.UserID(request)
 }
 
 func validSubscription(workspaceID, userID string, authorizer Authorizer) bool {

@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/runspace/runspace/internal/auth"
 )
 
 func fixedClock() time.Time { return time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC) }
@@ -97,7 +99,7 @@ func TestAllowsPolicy(t *testing.T) {
 func TestHTTPRoutes(t *testing.T) {
 	h := NewHandler(NewMemoryService(fixedClock)).Routes()
 	create := httptest.NewRequest(http.MethodPost, "/workspaces", strings.NewReader(`{"name":"Alpha"}`))
-	create.Header.Set("X-User-ID", "alice")
+	create = create.WithContext(auth.WithUserID(create.Context(), "alice"))
 	res := httptest.NewRecorder()
 	h.ServeHTTP(res, create)
 	if res.Code != http.StatusCreated {
@@ -109,28 +111,28 @@ func TestHTTPRoutes(t *testing.T) {
 		t.Fatalf("could not read created workspace: %v body=%s", err, res.Body.String())
 	}
 	list := httptest.NewRequest(http.MethodGet, "/workspaces", nil)
-	list.Header.Set("X-User-ID", "alice")
+	list = list.WithContext(auth.WithUserID(list.Context(), "alice"))
 	res = httptest.NewRecorder()
 	h.ServeHTTP(res, list)
 	if res.Code != http.StatusOK || !strings.Contains(res.Body.String(), "Alpha") {
 		t.Fatalf("list response=%d %s", res.Code, res.Body.String())
 	}
 	resource := httptest.NewRequest(http.MethodPost, "/workspaces/"+created.ID+"/resources", strings.NewReader(`{"provider":"folder","full_name":"notes","clone_url":"local-mirror://notes","default_branch":""}`))
-	resource.Header.Set("X-User-ID", "alice")
+	resource = resource.WithContext(auth.WithUserID(resource.Context(), "alice"))
 	res = httptest.NewRecorder()
 	h.ServeHTTP(res, resource)
 	if res.Code != http.StatusCreated {
 		t.Fatalf("connect resource status=%d body=%s", res.Code, res.Body.String())
 	}
 	resources := httptest.NewRequest(http.MethodGet, "/workspaces/"+created.ID+"/resources", nil)
-	resources.Header.Set("X-User-ID", "alice")
+	resources = resources.WithContext(auth.WithUserID(resources.Context(), "alice"))
 	res = httptest.NewRecorder()
 	h.ServeHTTP(res, resources)
 	if res.Code != http.StatusOK || !strings.Contains(res.Body.String(), `"resources"`) {
 		t.Fatalf("list resources response=%d %s", res.Code, res.Body.String())
 	}
 	members := httptest.NewRequest(http.MethodGet, "/workspaces/"+created.ID+"/members", nil)
-	members.Header.Set("X-User-ID", "alice")
+	members = members.WithContext(auth.WithUserID(members.Context(), "alice"))
 	res = httptest.NewRecorder()
 	h.ServeHTTP(res, members)
 	if res.Code != http.StatusOK || !strings.Contains(res.Body.String(), "alice") {

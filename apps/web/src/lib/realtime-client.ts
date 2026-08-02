@@ -36,6 +36,8 @@ export type RealtimeSocketOptions = {
   workspaceID: string;
   userID?: string;
   createSocket?: (url: string) => RealtimeSocket;
+  /** Supplies the short-lived gateway token; omitted in tests. */
+  tokenSource?: () => Promise<string>;
   onStatus?: (status: RealtimeStatus) => void;
   onFrame?: (frame: RealtimeFrame) => void;
   schedule?: (callback: () => void, delay: number) => ReturnType<typeof setTimeout>;
@@ -64,6 +66,7 @@ export class ReconnectingRealtimeSocket {
       schedule: options.schedule ?? ((callback, delay) => setTimeout(callback, delay)),
       cancel: options.cancel ?? ((handle) => clearTimeout(handle)),
       random: options.random ?? Math.random,
+      tokenSource: options.tokenSource ?? (() => Promise.resolve('')),
     };
   }
 
@@ -94,10 +97,18 @@ export class ReconnectingRealtimeSocket {
 
   private connect(): void {
     if (this.stopped) return;
-    const query = new URLSearchParams({ workspace_id: this.options.workspaceID });
-    if (this.options.userID) query.set('user_id', this.options.userID);
-    if (this.cursor) query.set('last_event_id', this.cursor);
     this.options.onStatus?.(this.retryAttempt === 0 ? 'connecting' : 'reconnecting');
+    // A browser cannot set headers on a WebSocket, so the gateway token has to
+    // ride in the query string. Fetching it makes connect asynchronous.
+    void this.openSocket();
+  }
+
+  private async openSocket(): Promise<void> {
+    const query = new URLSearchParams({ workspace_id: this.options.workspaceID });
+    if (this.cursor) query.set('last_event_id', this.cursor);
+    const token = await this.options.tokenSource();
+    if (this.stopped) return;
+    if (token) query.set('access_token', token);
     const socket = this.options.createSocket(`${this.options.url}?${query.toString()}`);
     this.socket = socket;
     socket.onopen = () => {

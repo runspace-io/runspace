@@ -270,6 +270,9 @@ func (s *Server) saveAgentPreference(writer http.ResponseWriter, request *http.R
 	writeJSON(writer, http.StatusOK, preference)
 }
 
+// localUserID trusts the caller's claimed identity, unlike the gateway. This
+// server binds to 127.0.0.1 only and serves the person already sitting at the
+// machine, so there is no second party to authenticate against.
 func localUserID(request *http.Request) string {
 	return strings.TrimSpace(fallback(request.Header.Get("X-User-ID"), request.URL.Query().Get("user_id")))
 }

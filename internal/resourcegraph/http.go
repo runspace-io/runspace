@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/runspace/runspace/internal/auth"
 )
 
 type Handler struct {
@@ -108,7 +108,7 @@ func (h *Handler) createEdge(writer http.ResponseWriter, request *http.Request) 
 }
 
 func graphUserID(request *http.Request) string {
-	return strings.TrimSpace(request.Header.Get("X-User-ID"))
+	return auth.UserID(request)
 }
 
 func decodeGraphBody(request *http.Request, target any) error {

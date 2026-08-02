@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/websocket"
+	"github.com/runspace/runspace/internal/auth"
 )
 
 func TestHandlerStreamsTerminalFrames(t *testing.T) {
@@ -16,9 +17,20 @@ func TestHandlerStreamsTerminalFrames(t *testing.T) {
 	service := &fakeFactory{session: session}
 	router := chi.NewRouter()
 	NewHandler(service, fakeResolver{}, fakeAuthorizer{}).RegisterRoutes(router)
-	server := httptest.NewServer(router)
+	// Exercised through the real auth middleware: a browser cannot set headers
+	// on a WebSocket, so the token has to survive the ?access_token= path.
+	signer, err := auth.NewSigner("terminal-test-secret", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	token, err := signer.Issue("u", "test", time.Minute)
+	if err != nil {
+		t.Fatal(err)
+	}
+	server := httptest.NewServer(auth.Middleware(signer)(router))
 	defer server.Close()
-	endpoint := "ws" + server.URL[len("http"):] + "/workspaces/w1/repositories/r1/terminal?user_id=u&command=sh"
+	endpoint := "ws" + server.URL[len("http"):] +
+		"/workspaces/w1/repositories/r1/terminal?access_token=" + token + "&command=sh"
 	connection, response, err := websocket.DefaultDialer.Dial(endpoint, nil)
 	if response != nil && response.Body != nil {
 		defer func() { _ = response.Body.Close() }()
@@ -47,7 +59,8 @@ func TestHandlerStreamsTerminalFrames(t *testing.T) {
 func TestHandlerRequiresWorkspaceWriteAccess(t *testing.T) {
 	router := chi.NewRouter()
 	NewHandler(&fakeFactory{}, fakeResolver{}, denyingAuthorizer{}).RegisterRoutes(router)
-	request := httptest.NewRequest(http.MethodGet, "/workspaces/w1/repositories/r1/terminal?user_id=u", nil)
+	request := httptest.NewRequest(http.MethodGet, "/workspaces/w1/repositories/r1/terminal", nil)
+	request = request.WithContext(auth.WithUserID(request.Context(), "u"))
 	recorder := httptest.NewRecorder()
 	router.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusForbidden {

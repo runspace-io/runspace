@@ -1,3 +1,4 @@
+import { asUser } from './gateway-token';
 import { expect, test, type APIRequestContext } from '@playwright/test';
 
 const MEMBER = process.env.E2E_MEMBER_USERNAME ?? 'nahid';
@@ -12,13 +13,13 @@ const MEMBER_PASSWORD = process.env.E2E_MEMBER_PASSWORD ?? 'nahid123';
  */
 async function shareWorkspaceWithMember(request: APIRequestContext) {
   const created = await request.post('/gateway/workspaces', {
-    headers: { 'X-User-ID': 'admin' },
+    headers: asUser('admin'),
     data: { name: `Shared with ${MEMBER} ${Date.now()}` },
   });
   expect(created.ok(), await created.text()).toBe(true);
   const workspace = (await created.json()) as { id: string };
   const member = await request.post(`/gateway/workspaces/${workspace.id}/members`, {
-    headers: { 'X-User-ID': 'admin' },
+    headers: asUser('admin'),
     data: { user_id: MEMBER, role: 'member' },
   });
   expect(member.ok(), await member.text()).toBe(true);
@@ -54,14 +55,14 @@ test('configured member account can sign in and access its shared workspace', as
 // A member must not see workspaces they were never added to.
 test('member cannot see a workspace they are not a member of', async ({ request }) => {
   const created = await request.post('/gateway/workspaces', {
-    headers: { 'X-User-ID': 'admin' },
+    headers: asUser('admin'),
     data: { name: `Admin only ${Date.now()}` },
   });
   expect(created.ok()).toBe(true);
   const workspace = (await created.json()) as { id: string };
 
   const visible = await request.get('/gateway/workspaces', {
-    headers: { 'X-User-ID': MEMBER },
+    headers: asUser(MEMBER),
   });
   const payload = (await visible.json()) as { workspaces: Array<{ id: string }> };
   expect(payload.workspaces.some((item) => item.id === workspace.id)).toBe(false);
