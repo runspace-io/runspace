@@ -9,9 +9,11 @@ that improve that experience.
 ```bash
 git clone https://github.com/runspace-io/runspace.git
 cd runspace
-cp .env.example .env
-docker compose up -d --build
+pnpm stack:up
 ```
+
+`stack:up` generates `.env` with fresh secrets on first run, then builds and
+starts everything. `pnpm run` lists the rest of the stack scripts.
 
 Open `http://localhost:3000` and sign in with `admin` / `admin`.
 
@@ -23,6 +25,7 @@ Open `http://localhost:3000` and sign in with `admin` / `admin`.
 
    ```bash
    pnpm quality      # Prettier, lint, typecheck, test, build
+   pnpm test:e2e     # Playwright; needs `pnpm host-agent` running
    ```
 
 4. **Open a pull request** with a clear description of the change.
