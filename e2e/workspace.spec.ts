@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { createLocalRepositoryFixture, restartGateway } from './local-repository';
 import { sendCollaboratorMessage } from './collaboration';
 import { fillNewChannelResource, selectNewChannelAgent } from './channel-dialog';
+import { openChannelContext } from './channel-context';
 
 test.setTimeout(60_000);
 
@@ -64,8 +65,7 @@ test('local admin can build and collaborate in a channel', async ({ page, browse
   await expect(channel).toBeVisible();
   await channel.click();
   await expect(page.getByText(new RegExp(`CHANNEL /`))).toBeVisible();
-  const channelContext = page.getByRole('complementary', { name: 'Channel context' });
-  await expect(channelContext).toBeVisible();
+  const channelContext = await openChannelContext(page);
   await expect(channelContext.getByRole('heading', { name: 'Resources' })).toBeVisible();
   await expect(channelContext.getByText('Built-in agent', { exact: true })).toBeVisible();
   await expect(page.locator('.left-rail').getByText('Files', { exact: true })).toBeVisible();

@@ -19,7 +19,6 @@ type Controller = ReturnType<typeof useWorkspaceController>;
 export function ChannelContextRail({
   controller,
   channel,
-  open,
   onClose,
   onOpenSettings,
   onRequestConnection,
@@ -31,7 +30,6 @@ export function ChannelContextRail({
 }: {
   controller: Controller;
   channel?: ApiChannel | undefined;
-  open: boolean;
   onClose: () => void;
   onOpenSettings: () => void;
   onRequestConnection: (mode: ConnectionDialogMode) => void;
@@ -43,7 +41,6 @@ export function ChannelContextRail({
 }) {
   return (
     <ChannelDetailsRail
-      open={open}
       channel={channel}
       repositories={controller.repositoryOptions}
       selectedRepositoryID={controller.selectedRepositoryID}

@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createHostFolderFixture, createLocalRepositoryFixture } from './local-repository';
 import { fillNewChannelResource } from './channel-dialog';
+import { openChannelContext } from './channel-context';
 
 test.setTimeout(60_000);
 
@@ -74,7 +75,7 @@ test('switches local mirror trees and runs visible host terminal input', async (
   await channelDialog.getByRole('button', { name: 'Create channel' }).click();
   await page.getByRole('button', { name: `Open ${channelName}` }).click();
 
-  const context = page.getByRole('complementary', { name: 'Channel context' });
+  const context = await openChannelContext(page);
   await connectLocalMirror(page, context, firstPath);
   await connectLocalMirror(page, context, secondPath);
 
@@ -129,7 +130,7 @@ async function createChannel(page: Page, name: string, repositoryURL: string) {
   await fillNewChannelResource(dialog, repositoryURL);
   await dialog.getByRole('button', { name: 'Create channel' }).click();
   await page.getByRole('button', { name: `Open ${name}` }).click();
-  await expect(page.getByRole('complementary', { name: 'Channel context' })).toBeVisible();
+  await openChannelContext(page);
 }
 
 async function connectLocalMirror(

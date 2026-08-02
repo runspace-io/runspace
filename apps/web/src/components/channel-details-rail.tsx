@@ -16,7 +16,6 @@ import { agentDescription, ContextEmptyState, ContextHeading } from './channel-d
 import type { ToolPanel } from './workspace-main-column';
 
 type ChannelDetailsRailProps = {
-  open: boolean;
   channel?: ApiChannel | undefined;
   repositories: readonly RepositorySummary[];
   selectedRepositoryID?: string | undefined;
@@ -33,7 +32,6 @@ type ChannelDetailsRailProps = {
 };
 
 export function ChannelDetailsRail({
-  open,
   channel,
   repositories,
   selectedRepositoryID,
@@ -51,7 +49,7 @@ export function ChannelDetailsRail({
   if (!channel) return null;
 
   return (
-    <aside className={`channel-details-rail ${open ? 'is-open' : ''}`} aria-label="Channel context">
+    <aside className="channel-details-rail" aria-label="Channel context">
       <header className="details-rail-header">
         <div>
           <span className="details-kicker">Channel context</span>

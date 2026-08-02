@@ -341,9 +341,6 @@ button {
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
-.details-close-button {
-  display: none;
-}
 .context-section {
   padding: 14px 12px 16px;
   border-bottom: 1px solid var(--line-soft);
@@ -1030,9 +1027,6 @@ button {
   color: var(--text-3);
   font-size: 11px;
   line-height: 1.55;
-}
-.mobile-context-button {
-  display: none;
 }
 .rail-heading {
   color: var(--text-3);
@@ -3399,20 +3393,8 @@ button {
     inset: 48px 0 0 auto;
     width: min(320px, 90vw);
     height: calc(100dvh - 48px);
-    transform: translateX(102%);
-    transition: transform 0.18s ease;
     box-shadow: -16px 0 40px rgba(0, 0, 0, 0.35);
     background: var(--surface);
-  }
-  .channel-details-rail.is-open {
-    transform: translateX(0);
-  }
-  .details-close-button,
-  .mobile-context-button {
-    display: grid;
-  }
-  .mobile-context-button {
-    display: grid;
   }
   .main-header,
   .timeline,

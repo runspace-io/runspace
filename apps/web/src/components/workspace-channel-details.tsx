@@ -10,7 +10,6 @@ type Controller = ReturnType<typeof useWorkspaceController>;
 export function WorkspaceChannelDetails({
   controller,
   channel,
-  open,
   chatRevision,
   onClose,
   onOpenSettings,
@@ -22,7 +21,6 @@ export function WorkspaceChannelDetails({
 }: {
   controller: Controller;
   channel?: ApiChannel | undefined;
-  open: boolean;
   chatRevision: number;
   onClose: () => void;
   onOpenSettings: () => void;
@@ -37,7 +35,6 @@ export function WorkspaceChannelDetails({
     <ChannelContextRail
       controller={controller}
       channel={channel}
-      open={open}
       onClose={onClose}
       onOpenSettings={onOpenSettings}
       onRequestConnection={onRequestConnection}

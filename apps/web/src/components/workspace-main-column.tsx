@@ -1,5 +1,11 @@
 import type { ComponentProps, ReactNode } from 'react';
-import { GitBranch, GitPullRequest, PanelRightOpen, Settings2 } from 'lucide-react';
+import {
+  GitBranch,
+  GitPullRequest,
+  PanelRightClose,
+  PanelRightOpen,
+  Settings2,
+} from 'lucide-react';
 import { Timeline } from './timeline';
 import { ChannelComposer } from './channel-composer';
 import type { ApiGraphNode, WorkspaceApiClient } from '@/lib/api-client';
@@ -28,7 +34,8 @@ export function WorkspaceMainColumn({
   onRunAgent,
   onOpenGraphNode,
   onOpenChannelSettings,
-  onOpenChannelDetails,
+  channelDetailsOpen,
+  onToggleChannelDetails,
   onOpenPublish,
   terminalState,
   terminalRepositories,
@@ -55,7 +62,8 @@ export function WorkspaceMainColumn({
   onRunAgent: () => void;
   onOpenGraphNode: (node: ApiGraphNode) => void;
   onOpenChannelSettings: () => void;
-  onOpenChannelDetails: () => void;
+  channelDetailsOpen: boolean;
+  onToggleChannelDetails: () => void;
   onOpenPublish: () => void;
   terminalState: {
     sessions: readonly TerminalSession[];
@@ -82,7 +90,8 @@ export function WorkspaceMainColumn({
         <HeaderActions
           channelAvailable={Boolean(channelName)}
           onOpenChannelSettings={onOpenChannelSettings}
-          onOpenChannelDetails={onOpenChannelDetails}
+          channelDetailsOpen={channelDetailsOpen}
+          onToggleChannelDetails={onToggleChannelDetails}
           onOpenPublish={onOpenPublish}
           publishAvailable={publishAvailable}
         />
@@ -169,13 +178,15 @@ function RepositoryIdentity({
 function HeaderActions({
   channelAvailable,
   onOpenChannelSettings,
-  onOpenChannelDetails,
+  channelDetailsOpen,
+  onToggleChannelDetails,
   onOpenPublish,
   publishAvailable,
 }: {
   channelAvailable: boolean;
   onOpenChannelSettings: () => void;
-  onOpenChannelDetails: () => void;
+  channelDetailsOpen: boolean;
+  onToggleChannelDetails: () => void;
   onOpenPublish: () => void;
   publishAvailable: boolean;
 }) {
@@ -183,12 +194,12 @@ function HeaderActions({
     <div className="main-header-actions">
       {channelAvailable && (
         <button
-          className="icon-button mobile-context-button"
-          onClick={onOpenChannelDetails}
-          aria-label="Open channel context"
+          className="icon-button context-toggle-button"
+          onClick={onToggleChannelDetails}
+          aria-label={channelDetailsOpen ? 'Hide channel context' : 'Show channel context'}
           title="Channel context"
         >
-          <PanelRightOpen size={16} />
+          {channelDetailsOpen ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
         </button>
       )}
       {channelAvailable && (

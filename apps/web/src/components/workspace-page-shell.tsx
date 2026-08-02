@@ -101,7 +101,8 @@ export function WorkspacePageShell({
             onRunAgent={() => void controller.runAgent()}
             onOpenGraphNode={setGraphNode}
             onOpenChannelSettings={() => setChannelSettingsOpen(true)}
-            onOpenChannelDetails={() => setDetailsOpen(true)}
+            channelDetailsOpen={detailsOpen}
+            onToggleChannelDetails={() => setDetailsOpen((value) => !value)}
             publishAvailable={model.publishAvailable}
             onOpenPublish={() => setPublishOpen(true)}
             terminalState={terminals}
@@ -110,30 +111,31 @@ export function WorkspacePageShell({
           />
         }
         details={
-          <WorkspaceChannelDetails
-            controller={controller}
-            channel={model.activeChannel}
-            open={detailsOpen}
-            chatRevision={chatRevision}
-            onClose={() => setDetailsOpen(false)}
-            onOpenSettings={() => setChannelSettingsOpen(true)}
-            onRequestConnection={setConnectionMode}
-            onOpenNewChat={() => setAgentChat(newAgentChat(controller, model))}
-            onOpenChat={setAgentChat}
-            onChatShared={(chat) => {
-              setAgentChat(chat);
-              setChatRevision((value) => value + 1);
-            }}
-            onOpenRepositoryTool={(repositoryID, tool) =>
-              openRepositoryTool(
-                controller,
-                setToolPanel,
-                setTerminalRepositoryID,
-                repositoryID,
-                tool,
-              )
-            }
-          />
+          detailsOpen ? (
+            <WorkspaceChannelDetails
+              controller={controller}
+              channel={model.activeChannel}
+              chatRevision={chatRevision}
+              onClose={() => setDetailsOpen(false)}
+              onOpenSettings={() => setChannelSettingsOpen(true)}
+              onRequestConnection={setConnectionMode}
+              onOpenNewChat={() => setAgentChat(newAgentChat(controller, model))}
+              onOpenChat={setAgentChat}
+              onChatShared={(chat) => {
+                setAgentChat(chat);
+                setChatRevision((value) => value + 1);
+              }}
+              onOpenRepositoryTool={(repositoryID, tool) =>
+                openRepositoryTool(
+                  controller,
+                  setToolPanel,
+                  setTerminalRepositoryID,
+                  repositoryID,
+                  tool,
+                )
+              }
+            />
+          ) : undefined
         }
       />
       <WorkspaceShellOverlays
