@@ -1,6 +1,7 @@
 import { Bot, Check, Send, Share2, Square, Users, X } from 'lucide-react';
 import type { LocalAgentSession, LocalTaskMessage } from '@/lib/host-agent-client';
 import type { RepositorySummary } from '@/lib/workspace-state';
+import type { AgentActivity } from './agent-task-activity';
 
 export function AgentTaskHeader({
   title,
@@ -136,6 +137,21 @@ export function TaskLog({
         </li>
       ))}
     </ol>
+  );
+}
+
+/**
+ * The conversational equivalent of a "typing…" indicator: while a turn is
+ * running and nothing has streamed back yet, say so, instead of leaving the
+ * composer's disabled state as the only sign anything is happening.
+ */
+export function AgentActivityLine({ activity }: { activity: AgentActivity }) {
+  if (!activity) return null;
+  return (
+    <p className="agent-task-activity" aria-live="polite">
+      <i className="agent-task-activity-dot" />
+      {activity.kind === 'thinking' ? 'Agent is thinking…' : `Running: ${activity.command}…`}
+    </p>
   );
 }
 

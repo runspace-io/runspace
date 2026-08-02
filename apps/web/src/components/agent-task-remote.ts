@@ -104,6 +104,30 @@ export function saveTaskMetadata(
     });
 }
 
+export function optimisticSession(
+  current: LocalAgentSession | undefined,
+  props: AgentTaskProps,
+  resourceID: string,
+  taskID: string,
+  prompt: string,
+): LocalAgentSession {
+  const now = new Date().toISOString();
+  return {
+    id: current?.id ?? taskID,
+    title: current?.title ?? titleFromWork(prompt),
+    agent_id: props.agentID,
+    resource_id: resourceID,
+    thread_id: props.threadID,
+    status: 'running',
+    pause_support: current?.pause_support ?? 'cancel-only',
+    messages: [
+      ...(current?.messages ?? []),
+      { id: `optimistic_${Date.now()}`, role: 'user', body: prompt, created_at: now },
+    ],
+    updated_at: now,
+  };
+}
+
 export function titleFromWork(input: string): string {
   const firstLine = input
     .trim()

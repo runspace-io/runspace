@@ -1,6 +1,12 @@
 'use client';
 
-import { AgentTaskComposer, AgentTaskHeader, AgentTaskMeta, TaskLog } from './agent-task-parts';
+import {
+  AgentActivityLine,
+  AgentTaskComposer,
+  AgentTaskHeader,
+  AgentTaskMeta,
+  TaskLog,
+} from './agent-task-parts';
 import { type AgentTaskProps, useAgentTask } from './agent-task-controller';
 import { AgentTaskQuestion } from './agent-task-question';
 import { TaskAccessPanel } from './task-access-panel';
@@ -41,6 +47,7 @@ export function AgentTaskSurface(props: AgentTaskProps) {
         shared={task.shared}
         onShare={(message) => void task.share(message)}
       />
+      <AgentActivityLine activity={task.activity} />
       {question.question && (
         <AgentTaskQuestion
           question={question.question}

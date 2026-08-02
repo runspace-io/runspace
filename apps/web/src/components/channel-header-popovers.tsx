@@ -1,7 +1,7 @@
 'use client';
 
 import { Bot, Check, Code2, GitBranch, GitCompare, Terminal } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { ApiChannel } from '@/lib/api-client';
 import type { RepositorySummary } from '@/lib/workspace-state';
 import type { useWorkspaceController } from './use-workspace-controller';
@@ -199,10 +199,13 @@ function AgentPopover({
   onRequestConnection: () => void;
   chats?: ReactNode;
 }) {
+  const [open, setOpen] = useState(false);
   return (
     <HeaderPopover
       title="Agent"
       panelLabel="Agent"
+      open={open}
+      onOpenChange={setOpen}
       trigger={() => (
         <>
           <Bot size={14} />
@@ -226,7 +229,14 @@ function AgentPopover({
         </span>
       </div>
       <div className="context-actions">
-        <button className="context-primary-action" disabled={!available} onClick={onOpenTask}>
+        <button
+          className="context-primary-action"
+          disabled={!available}
+          onClick={() => {
+            setOpen(false);
+            onOpenTask();
+          }}
+        >
           <Bot size={14} />
           New agent chat
         </button>

@@ -12,6 +12,8 @@ export function HeaderPopover({
   panelLabel,
   trigger,
   children,
+  open: controlledOpen,
+  onOpenChange,
 }: {
   /** Static hover title AND accessible name, kept independent of the
    * dynamic visual label (a repository or agent name) so it can't collide
@@ -20,8 +22,16 @@ export function HeaderPopover({
   panelLabel: string;
   trigger: (open: boolean) => ReactNode;
   children: ReactNode;
+  /** Omit for a plain uncontrolled popover. Pass both when a caller needs to
+   * force-close it itself — e.g. a "New agent chat" action inside the panel
+   * that navigates away and would otherwise leave the panel floating on top
+   * of whatever replaces it. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const open = controlledOpen ?? uncontrolledOpen;
+  const setOpen = onOpenChange ?? setUncontrolledOpen;
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -38,7 +48,7 @@ export function HeaderPopover({
       document.removeEventListener('pointerdown', onPointerDown);
       document.removeEventListener('keydown', onKeyDown);
     };
-  }, [open]);
+  }, [open, setOpen]);
 
   return (
     <div className="header-popover" ref={rootRef}>
@@ -48,7 +58,7 @@ export function HeaderPopover({
         aria-expanded={open}
         aria-label={title}
         title={title}
-        onClick={() => setOpen((value) => !value)}
+        onClick={() => setOpen(!open)}
       >
         {trigger(open)}
       </button>

@@ -2960,6 +2960,23 @@ button:active:not(:disabled) {
   color: var(--accent);
   cursor: default;
 }
+.agent-task-activity {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  padding: 7px 16px;
+  color: var(--text-3);
+  font-size: 11px;
+  border-top: 1px solid var(--line-soft);
+}
+.agent-task-activity-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: status-dot-breathe 1.4s var(--ease) infinite;
+}
 .agent-task-error {
   margin: 0;
   padding: 8px 16px;

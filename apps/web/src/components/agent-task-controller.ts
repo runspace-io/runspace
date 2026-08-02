@@ -12,10 +12,12 @@ import {
 import type { RepositorySummary } from '@/lib/workspace-state';
 import {
   loadChannelTask,
+  optimisticSession,
   runRemoteTask,
   saveTaskMetadata,
   titleFromWork,
 } from './agent-task-remote';
+import { deriveAgentActivity, pollSessionWhileRunning } from './agent-task-activity';
 import { localAgentErrorMessage } from './local-agent-error';
 
 export type AgentTaskProps = {
@@ -48,6 +50,7 @@ export function useAgentTask(props: AgentTaskProps) {
   const [remoteTask, setRemoteTask] = useState<ApiAgentTask>();
   const [title, setTitle] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
+  const [messageCountAtStart, setMessageCountAtStart] = useState(0);
   const selectedResource = useMemo(
     () => props.resources.find((resource) => resource.id === resourceID),
     [props.resources, resourceID],
@@ -67,7 +70,9 @@ export function useAgentTask(props: AgentTaskProps) {
     setBusy(true);
     setInstruction('');
     setError(undefined);
-    setSession((current) => optimisticSession(current, props, resourceID, taskID, prompt));
+    const optimistic = optimisticSession(session, props, resourceID, taskID, prompt);
+    setSession(optimistic);
+    setMessageCountAtStart(optimistic.messages.length);
     if (remoteTask) {
       await runRemoteTask(props, remoteTask, prompt, { setSession, setError, setBusy });
       return;
@@ -77,6 +82,7 @@ export function useAgentTask(props: AgentTaskProps) {
     const activeTaskID = session?.id ?? taskID;
     await persistRegisteredChat(props, activeTaskID, resourceID, nextTitle, 'running');
     await publishRegisteredActivity(props, 'started');
+    const stopPolling = pollSessionWhileRunning(props, resourceID, activeTaskID, setSession);
     try {
       await promptLocalAgent({
         userID: props.api.actorID,
@@ -99,6 +105,7 @@ export function useAgentTask(props: AgentTaskProps) {
       await persistRegisteredChat(props, activeTaskID, resourceID, nextTitle, 'failed');
       await publishRegisteredActivity(props, 'failed');
     } finally {
+      stopPolling();
       setBusy(false);
     }
   };
@@ -147,6 +154,7 @@ export function useAgentTask(props: AgentTaskProps) {
     instruction,
     setInstruction,
     busy,
+    activity: deriveAgentActivity(busy, session, messageCountAtStart),
     error,
     shared,
     accessOpen,
@@ -257,30 +265,6 @@ function publishRegisteredActivity(
   status: 'started' | 'completed' | 'failed' | 'cancelled',
 ) {
   return props.registered === false ? Promise.resolve() : publishActivity(props, status);
-}
-
-function optimisticSession(
-  current: LocalAgentSession | undefined,
-  props: AgentTaskProps,
-  resourceID: string,
-  taskID: string,
-  prompt: string,
-): LocalAgentSession {
-  const now = new Date().toISOString();
-  return {
-    id: current?.id ?? taskID,
-    title: current?.title ?? titleFromWork(prompt),
-    agent_id: props.agentID,
-    resource_id: resourceID,
-    thread_id: props.threadID,
-    status: 'running',
-    pause_support: current?.pause_support ?? 'cancel-only',
-    messages: [
-      ...(current?.messages ?? []),
-      { id: `optimistic_${Date.now()}`, role: 'user', body: prompt, created_at: now },
-    ],
-    updated_at: now,
-  };
 }
 
 export function errorMessage(reason: unknown, fallback: string) {
