@@ -16,6 +16,7 @@ import {
   saveTaskMetadata,
   titleFromWork,
 } from './agent-task-remote';
+import { localAgentErrorMessage } from './local-agent-error';
 
 export type AgentTaskProps = {
   api: WorkspaceApiClient;
@@ -93,7 +94,7 @@ export function useAgentTask(props: AgentTaskProps) {
       await persistRegisteredChat(props, activeTaskID, resourceID, completedTitle, 'completed');
       await publishRegisteredActivity(props, 'completed');
     } catch (reason) {
-      setError(errorMessage(reason, 'The local agent could not complete this instruction.'));
+      setError(localAgentErrorMessage(reason));
       setSession((current) => (current ? { ...current, status: 'failed' } : current));
       await persistRegisteredChat(props, activeTaskID, resourceID, nextTitle, 'failed');
       await publishRegisteredActivity(props, 'failed');
