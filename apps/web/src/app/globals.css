@@ -1806,6 +1806,35 @@ button {
   background: var(--accent-2);
 }
 
+.composer-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.composer-run {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--text-2);
+  background: var(--surface-2);
+  font: 600 11px var(--sans);
+  white-space: nowrap;
+}
+
+.composer-run:disabled {
+  opacity: 0.28;
+}
+
+.composer-run:not(:disabled):hover {
+  color: var(--text-1);
+  border-color: var(--accent);
+}
+
 .composer-suggestions {
   position: absolute;
   right: 7px;
@@ -2904,6 +2933,53 @@ button {
   color: var(--red);
   background: color-mix(in srgb, var(--red) 8%, var(--surface));
   font-size: 11px;
+}
+.agent-task-question {
+  display: grid;
+  gap: 12px;
+  padding: 14px 16px;
+  border-top: 1px solid color-mix(in srgb, var(--amber) 45%, var(--line));
+  background: color-mix(in srgb, var(--amber) 9%, var(--surface));
+}
+.agent-task-question > header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.agent-task-question .eyebrow {
+  color: var(--amber);
+}
+.agent-task-question h3 {
+  margin: 2px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.agent-task-question-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  color: var(--amber);
+  background: color-mix(in srgb, var(--amber) 18%, transparent);
+}
+.agent-task-question-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.agent-task-question-readonly {
+  margin: 0;
+  color: var(--text-3);
+  font-size: 11px;
+}
+.agent-task-status.is-waiting_approval {
+  color: var(--amber);
+}
+.agent-task-status.is-waiting_approval i {
+  animation: blink 1.1s infinite;
 }
 .agent-task-composer {
   display: grid;

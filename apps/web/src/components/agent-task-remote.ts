@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react';
-import type { ApiAgentTask, WorkspaceApiClient } from '@/lib/api-client';
+import type { ApiAgentTask, ApiAgentTaskMessage, WorkspaceApiClient } from '@/lib/api-client';
 import { getLocalAgentSession, type LocalAgentSession } from '@/lib/host-agent-client';
 import type { AgentTaskProps } from './agent-task-controller';
 
@@ -19,7 +19,7 @@ export async function loadChannelTask(request: {
   );
   if (existing && existing.owner_id !== api.actorID) {
     return {
-      session: remoteSession(existing),
+      session: await remoteSession(api, existing),
       remoteTask: existing,
       title: existing.title,
     };
@@ -115,7 +115,14 @@ export function titleFromWork(input: string): string {
   return firstLine.length > 72 ? `${firstLine.slice(0, 69).trimEnd()}…` : firstLine;
 }
 
-function remoteSession(task: ApiAgentTask): LocalAgentSession {
+// Someone else's task runs on their device, so its transcript comes from the
+// gateway rather than this machine's Host Agent. Without this a grantee saw an
+// empty chat and had to intervene blind.
+async function remoteSession(
+  api: WorkspaceApiClient,
+  task: ApiAgentTask,
+): Promise<LocalAgentSession> {
+  const messages = await api.listAgentTaskMessages(task.id).catch((): ApiAgentTaskMessage[] => []);
   return {
     id: task.id,
     title: task.title,
@@ -124,7 +131,12 @@ function remoteSession(task: ApiAgentTask): LocalAgentSession {
     thread_id: task.thread_id,
     status: task.status,
     pause_support: 'cancel-only',
-    messages: [],
+    messages: messages.map((message) => ({
+      id: message.id,
+      role: message.role,
+      body: message.body,
+      created_at: message.created_at,
+    })),
     updated_at: task.updated_at,
   };
 }

@@ -105,8 +105,34 @@ export type ApiAgentTask = {
   agent_id: string;
   resource_id: string;
   title: string;
-  status: 'ready' | 'running' | 'completed' | 'failed' | 'cancelled';
+  status: 'ready' | 'running' | 'waiting_approval' | 'completed' | 'failed' | 'cancelled';
   created_at: string;
+  updated_at: string;
+};
+
+export type ApiAgentTaskMessage = {
+  id: string;
+  role: 'user' | 'agent';
+  body: string;
+  created_at: string;
+};
+
+export type ApiQuestionOption = {
+  id: string;
+  name: string;
+  kind: string;
+};
+
+/** A permission request the agent is blocked on until someone answers it. */
+export type ApiTaskQuestion = {
+  id: string;
+  task_id: string;
+  title: string;
+  options: ApiQuestionOption[];
+  status: 'open' | 'answered' | 'cancelled';
+  answered_by?: string;
+  answered_option?: string;
+  asked_at: string;
   updated_at: string;
 };
 

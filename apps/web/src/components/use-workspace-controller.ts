@@ -13,6 +13,7 @@ import { useWorkspaceSync, type WorkspaceSyncState } from './workspace-sync';
 import { useRepositoryTree } from './use-repository-tree';
 import { channelRepositoryIDs } from './channel-config';
 import { connectLocalMirror } from '@/lib/host-agent-client';
+import { dispatchRun } from './run-dispatch';
 export function useWorkspaceController(userID: string) {
   const api = useMemo(() => new WorkspaceApiClient({ userID }), [userID]);
   const [timeline, setTimeline] = useState<TimelineItem[]>([]);
@@ -32,6 +33,9 @@ export function useWorkspaceController(userID: string) {
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>('idle');
   const [threadID, setThreadID] = useState<string>();
   const [activeRun, setActiveRun] = useState<import('@/lib/api-client').ApiRun>();
+  // Agent task events carry no bodies, so they act purely as a reload signal
+  // for whichever task surface is open.
+  const [taskRevision, setTaskRevision] = useState(0);
   const activeChannel = channels.find((channel) => channel.id === activeChannelID);
   const repositoryIDs = channelRepositoryIDs(activeChannel);
   const repositoryID = selectedChannelRepository(repositoryIDs, selectedRepositoryID);
@@ -58,6 +62,7 @@ export function useWorkspaceController(userID: string) {
       setAgents,
       setActiveChannelID,
       setActiveRun,
+      onAgentTaskEvent: () => setTaskRevision((current) => current + 1),
     }),
     [],
   );
@@ -132,6 +137,18 @@ export function useWorkspaceController(userID: string) {
     send: composer.send,
     agentAvailable: composer.agentAvailable,
     activeRun,
+    taskRevision,
+    runAgent: () =>
+      dispatchRun({
+        api,
+        workspaceID: activeWorkspace?.id,
+        threadID,
+        repositoryID,
+        prompt: draft,
+        setActiveRun,
+        setDraft,
+        setError: setFormError,
+      }),
     createWorkspace: actions.createWorkspace,
     createChannel: actions.createChannel,
     updateChannel: actions.updateChannel,

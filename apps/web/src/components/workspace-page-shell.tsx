@@ -97,6 +97,8 @@ export function WorkspacePageShell({
             toolPanel={toolPanel}
             onDraftChange={controller.setDraft}
             onSend={controller.send}
+            runAvailable={controller.agentAvailable && Boolean(controller.selectedRepositoryID)}
+            onRunAgent={() => void controller.runAgent()}
             onOpenGraphNode={setGraphNode}
             onOpenChannelSettings={() => setChannelSettingsOpen(true)}
             onOpenChannelDetails={() => setDetailsOpen(true)}
@@ -249,6 +251,7 @@ function selectedAgentChatSurface(
       initialResourceID={chat.resourceID}
       taskID={chat.id}
       registered={chat.registered}
+      taskRevision={controller.taskRevision}
       onTaskChange={onChange}
       onChatChange={onChange}
       onClose={() => setChat(undefined)}

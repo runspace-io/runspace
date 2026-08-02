@@ -26,6 +26,8 @@ export type AgentTaskProps = {
   initialResourceID?: string | undefined;
   taskID?: string | undefined;
   registered?: boolean | undefined;
+  /** Bumped by realtime task events so a viewer reloads someone else's chat. */
+  taskRevision?: number | undefined;
   onClose: () => void;
   onTaskChange?: ((task: ApiAgentTask) => void) | undefined;
   onChatChange?: (() => void) | undefined;
@@ -44,11 +46,19 @@ export function useAgentTask(props: AgentTaskProps) {
   const [accessOpen, setAccessOpen] = useState(false);
   const [remoteTask, setRemoteTask] = useState<ApiAgentTask>();
   const [title, setTitle] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
   const selectedResource = useMemo(
     () => props.resources.find((resource) => resource.id === resourceID),
     [props.resources, resourceID],
   );
-  useTaskLoader(props, resourceID, taskID, { setSession, setError, setRemoteTask, setTitle });
+  // Realtime task events and local answers both reload through the same key.
+  const revision = reloadKey + (props.taskRevision ?? 0);
+  useTaskLoader(props, resourceID, taskID, revision, {
+    setSession,
+    setError,
+    setRemoteTask,
+    setTitle,
+  });
 
   const run = async () => {
     const prompt = instruction.trim();
@@ -146,6 +156,7 @@ export function useAgentTask(props: AgentTaskProps) {
     run,
     cancel,
     share,
+    refresh: () => setReloadKey((current) => current + 1),
   };
 }
 
@@ -153,6 +164,7 @@ function useTaskLoader(
   props: AgentTaskProps,
   resourceID: string,
   taskID: string,
+  revision: number,
   state: {
     setSession: (session: LocalAgentSession | undefined) => void;
     setError: (message: string | undefined) => void;
@@ -164,10 +176,12 @@ function useTaskLoader(
   const { setSession, setError, setRemoteTask, setTitle } = state;
   useEffect(() => {
     let active = true;
-    setSession(undefined);
     setError(undefined);
-    setRemoteTask(undefined);
-    if (!resourceID) return;
+    if (!resourceID) {
+      setSession(undefined);
+      setRemoteTask(undefined);
+      return;
+    }
     void loadChannelTask({
       api,
       workspaceID,
@@ -200,6 +214,7 @@ function useTaskLoader(
     threadID,
     taskID,
     workspaceID,
+    revision,
     props.registered,
   ]);
 }

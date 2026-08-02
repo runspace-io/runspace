@@ -22,8 +22,10 @@ export function WorkspaceMainColumn({
   draft,
   file,
   toolPanel,
+  runAvailable,
   onDraftChange,
   onSend,
+  onRunAgent,
   onOpenGraphNode,
   onOpenChannelSettings,
   onOpenChannelDetails,
@@ -47,8 +49,10 @@ export function WorkspaceMainColumn({
   draft: string;
   file: ComponentProps<typeof WorkspaceTools>['file'];
   toolPanel: ToolPanel;
+  runAvailable: boolean;
   onDraftChange: (value: string) => void;
   onSend: () => void;
+  onRunAgent: () => void;
   onOpenGraphNode: (node: ApiGraphNode) => void;
   onOpenChannelSettings: () => void;
   onOpenChannelDetails: () => void;
@@ -112,8 +116,10 @@ export function WorkspaceMainColumn({
                 api={api}
                 workspaceID={workspaceID ?? ''}
                 draft={draft}
+                runAvailable={runAvailable}
                 onDraftChange={onDraftChange}
                 onSend={onSend}
+                onRunAgent={onRunAgent}
               />
             ) : (
               <p className="chat-loading">Opening channel conversation…</p>

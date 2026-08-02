@@ -1,73 +1,16 @@
 import { normalizeRepository } from './api-normalizers';
 import type { ApiRepositoryFile } from './api-types';
 import type { RepositorySummary, WorkspaceTreeEntry } from './workspace-state';
+import type {
+  HostAgentStatus,
+  LocalAgentChatSummary,
+  LocalAgentInstallation,
+  LocalAgentSession,
+  LocalRepositoryStatus,
+  MirrorResponse,
+} from './host-agent-types';
 
-type MirrorResponse = {
-  resource: RepositorySummary;
-  repository?: RepositorySummary;
-  sync: {
-    status: {
-      state: string;
-      error?: string;
-    };
-  };
-};
-
-export type LocalRepositoryStatus = {
-  path: string;
-  git: boolean;
-  origin?: string;
-  branch?: string;
-  has_remote: boolean;
-  can_connect: boolean;
-};
-
-export type HostAgentStatus = {
-  status: string;
-  access_level: 'user' | 'administrator';
-  elevated: boolean;
-};
-
-export type LocalAgentInstallation = {
-  id: string;
-  registry_id: string;
-  name: string;
-  description: string;
-  protocol: 'acp';
-  placement: 'host';
-  status: 'ready' | 'adapter_required';
-  capabilities: string[];
-  model?: string;
-  permission_mode?: 'default' | 'approve' | 'yolo';
-};
-
-export type LocalTaskMessage = {
-  id: string;
-  role: 'user' | 'agent';
-  body: string;
-  created_at: string;
-};
-
-export type LocalAgentSession = {
-  id: string;
-  title: string;
-  agent_id: string;
-  resource_id: string;
-  thread_id: string;
-  status: 'draft' | 'ready' | 'running' | 'completed' | 'failed' | 'cancelled';
-  pause_support: 'native' | 'process-suspend' | 'cancel-only';
-  messages: LocalTaskMessage[];
-  updated_at?: string;
-};
-
-export type LocalAgentChatSummary = {
-  id: string;
-  title: string;
-  agent_id: string;
-  resource_id: string;
-  status: LocalAgentSession['status'];
-  updated_at?: string;
-};
+export type * from './host-agent-types';
 
 const hostAgentURL =
   process.env.NEXT_PUBLIC_HOST_AGENT_URL?.replace(/\/$/, '') ?? 'http://127.0.0.1:7799';
@@ -167,6 +110,30 @@ export function getLocalAgentSession(input: {
   });
   return hostAgentGet(
     `/v1/agents/${encodeURIComponent(input.agentID)}/session?${query.toString()}`,
+    input.userID,
+  );
+}
+
+/** Unblocks the owner's own agent. An empty optionID rejects the request. */
+export function answerLocalAgentQuestion(input: {
+  userID: string;
+  agentID: string;
+  resourceID: string;
+  threadID: string;
+  taskID: string;
+  questionID: string;
+  optionID: string;
+}): Promise<{ status: 'answered' }> {
+  return hostAgentRequest(
+    `/v1/agents/${encodeURIComponent(input.agentID)}/session/answer`,
+    {
+      resource_id: input.resourceID,
+      thread_id: input.threadID,
+      task_id: input.taskID,
+      question_id: input.questionID,
+      option_id: input.optionID,
+    },
+    'POST',
     input.userID,
   );
 }

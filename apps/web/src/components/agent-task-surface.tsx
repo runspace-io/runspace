@@ -2,10 +2,22 @@
 
 import { AgentTaskComposer, AgentTaskHeader, AgentTaskMeta, TaskLog } from './agent-task-parts';
 import { type AgentTaskProps, useAgentTask } from './agent-task-controller';
+import { AgentTaskQuestion } from './agent-task-question';
 import { TaskAccessPanel } from './task-access-panel';
+import { useTaskQuestion } from './use-task-question';
 
 export function AgentTaskSurface(props: AgentTaskProps) {
   const task = useAgentTask(props);
+  const question = useTaskQuestion({
+    api: props.api,
+    agentID: props.agentID,
+    threadID: props.threadID,
+    resourceID: task.resourceID,
+    session: task.session,
+    remote: task.remote,
+    revision: props.taskRevision ?? 0,
+    onAnswered: () => task.refresh(),
+  });
   return (
     <section className="agent-task-surface" aria-labelledby="agent-task-title">
       <AgentTaskHeader
@@ -29,6 +41,15 @@ export function AgentTaskSurface(props: AgentTaskProps) {
         shared={task.shared}
         onShare={(message) => void task.share(message)}
       />
+      {question.question && (
+        <AgentTaskQuestion
+          question={question.question}
+          canAnswer={question.canAnswer}
+          busy={question.busy}
+          error={question.error}
+          onAnswer={(optionID) => void question.answer(optionID)}
+        />
+      )}
       <ChatSurfaceState props={props} task={task} />
       <AgentTaskComposer
         session={task.session}

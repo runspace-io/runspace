@@ -7,7 +7,7 @@ import {
   type ApiEvent,
   type ApiRun,
 } from '@/lib/api-client';
-import { eventRunContext } from '@/lib/api-normalizers';
+import { agentTaskEvent, eventRunContext } from '@/lib/api-normalizers';
 import {
   ReconnectingRealtimeSocket,
   type RealtimeFrame,
@@ -27,6 +27,11 @@ export type WorkspaceSyncState = {
   setAgents: Dispatch<SetStateAction<ApiAgentInstallation[]>>;
   setActiveChannelID: (id: string | undefined) => void;
   setActiveRun: Dispatch<SetStateAction<ApiRun | undefined>>;
+  onAgentTaskEvent?: (update: {
+    taskID: string;
+    status: string | undefined;
+    questionID: string | undefined;
+  }) => void;
 };
 
 export function useWorkspaceSync(
@@ -144,6 +149,11 @@ function handleFrame(
 ) {
   const event = frame.event as ApiEvent | undefined;
   if (!event) return;
+  const taskUpdate = agentTaskEvent(event);
+  if (taskUpdate) {
+    state.onAgentTaskEvent?.(taskUpdate);
+    return;
+  }
   const eventContext = eventRunContext(event);
   if (event.type === 'message.created' && eventContext.threadID !== context.activeThreadID) return;
   if (

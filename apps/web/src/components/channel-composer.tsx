@@ -1,6 +1,6 @@
 'use client';
 
-import { AtSign, Bold, Braces, Code2, Link2, Send, Sparkles } from 'lucide-react';
+import { AtSign, Bold, Bot, Braces, Code2, Link2, Send, Sparkles } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { ApiGraphNode, ApiMember, WorkspaceApiClient } from '@/lib/api-client';
 import { useMentionPicker } from './use-mention-picker';
@@ -9,14 +9,19 @@ export function ChannelComposer({
   api,
   workspaceID,
   draft,
+  runAvailable = false,
   onDraftChange,
   onSend,
+  onRunAgent,
 }: {
   api: WorkspaceApiClient;
   workspaceID: string;
   draft: string;
+  /** True when this channel has an agent and a resource to run it against. */
+  runAvailable?: boolean;
   onDraftChange: (value: string) => void;
   onSend: () => void;
+  onRunAgent?: (() => void) | undefined;
 }) {
   const textarea = useRef<HTMLTextAreaElement>(null);
   const [resources, setResources] = useState<ApiGraphNode[]>([]);
@@ -120,21 +125,56 @@ export function ChannelComposer({
           onSelect={mentions.select}
           onClose={mentions.close}
         />
-        <footer>
-          <span>
-            <kbd>Enter</kbd> send · <kbd>Shift Enter</kbd> newline · Markdown supported
-          </span>
-          <button
-            className="composer-send"
-            disabled={!draft.trim()}
-            onClick={onSend}
-            aria-label="Send message"
-          >
-            <Send size={15} />
-          </button>
-        </footer>
+        <ComposerFooter
+          draft={draft}
+          runAvailable={runAvailable}
+          onSend={onSend}
+          onRunAgent={onRunAgent}
+        />
       </section>
     </div>
+  );
+}
+
+function ComposerFooter({
+  draft,
+  runAvailable,
+  onSend,
+  onRunAgent,
+}: {
+  draft: string;
+  runAvailable: boolean;
+  onSend: () => void;
+  onRunAgent?: (() => void) | undefined;
+}) {
+  return (
+    <footer>
+      <span>
+        <kbd>Enter</kbd> send · <kbd>Shift Enter</kbd> newline · Markdown supported
+      </span>
+      <span className="composer-actions">
+        {runAvailable && onRunAgent && (
+          <button
+            type="button"
+            className="composer-run"
+            disabled={!draft.trim()}
+            onClick={onRunAgent}
+            title="Run the channel agent against this resource in an isolated container"
+          >
+            <Bot size={14} />
+            Run agent
+          </button>
+        )}
+        <button
+          className="composer-send"
+          disabled={!draft.trim()}
+          onClick={onSend}
+          aria-label="Send message"
+        >
+          <Send size={15} />
+        </button>
+      </span>
+    </footer>
   );
 }
 

@@ -1,7 +1,46 @@
-import type { ApiAgentTask, ApiMessage, ApiTaskGrant } from './api-types';
+import type {
+  ApiAgentTask,
+  ApiAgentTaskMessage,
+  ApiMessage,
+  ApiTaskGrant,
+  ApiTaskQuestion,
+} from './api-types';
 import { ResourceApiClient } from './resource-api-client';
 
 export class AgentTaskApiClient extends ResourceApiClient {
+  // The server-side transcript. Realtime task events carry no bodies, so this
+  // is how a viewer reads what the agent said — and it enforces the grant.
+  public listAgentTaskMessages(taskID: string): Promise<ApiAgentTaskMessage[]> {
+    return this.request<{ messages: ApiAgentTaskMessage[] | null }>(
+      `/agent-tasks/${encodeURIComponent(taskID)}/messages`,
+    ).then((data) => data.messages ?? []);
+  }
+
+  /** canAnswer reflects this viewer's grant, so the UI never offers a control
+   * the server would reject. */
+  public listTaskQuestions(
+    taskID: string,
+  ): Promise<{ questions: ApiTaskQuestion[]; canAnswer: boolean }> {
+    return this.request<{ questions: ApiTaskQuestion[] | null; can_answer?: boolean }>(
+      `/agent-tasks/${encodeURIComponent(taskID)}/questions`,
+    ).then((data) => ({
+      questions: data.questions ?? [],
+      canAnswer: data.can_answer === true,
+    }));
+  }
+
+  /** Unblocks a waiting agent. An empty optionID cancels the request. */
+  public answerTaskQuestion(
+    taskID: string,
+    questionID: string,
+    optionID: string,
+  ): Promise<ApiTaskQuestion> {
+    return this.request<ApiTaskQuestion>(
+      `/agent-tasks/${encodeURIComponent(taskID)}/questions/${encodeURIComponent(questionID)}/answer`,
+      { method: 'POST', body: JSON.stringify({ option_id: optionID }) },
+    );
+  }
+
   public listTaskGrants(
     workspaceID: string,
     taskID: string,

@@ -73,6 +73,39 @@ export function eventRunContext(event: ApiEvent): {
   };
 }
 
+const AGENT_TASK_EVENTS = new Set([
+  'agent.task.message',
+  'agent.task.status',
+  'agent.question.asked',
+  'agent.question.answered',
+]);
+
+// Agent task events announce that a private chat advanced; they never carry the
+// message body, because the realtime bus reaches every workspace member. A
+// listener that cares must re-read the transcript through the granted endpoint.
+export function agentTaskEvent(event: ApiEvent):
+  | {
+      taskID: string;
+      threadID: string | undefined;
+      status: string | undefined;
+      questionID: string | undefined;
+    }
+  | undefined {
+  if (!AGENT_TASK_EVENTS.has(event.type)) return undefined;
+  const payload =
+    event.payload && typeof event.payload === 'object'
+      ? (event.payload as Record<string, unknown>)
+      : {};
+  const taskID = readString(payload, 'task_id');
+  if (!taskID) return undefined;
+  return {
+    taskID,
+    threadID: event.thread_id ?? readString(payload, 'thread_id'),
+    status: readString(payload, 'status'),
+    questionID: readString(payload, 'question_id'),
+  };
+}
+
 export function normalizeWorkspace(value: WorkspaceSummary): WorkspaceSummary {
   const raw = value as WorkspaceSummary & { resource_count?: number; repository_count?: number };
   return {
