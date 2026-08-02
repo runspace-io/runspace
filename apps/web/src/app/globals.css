@@ -2566,6 +2566,8 @@ button {
 }
 .workspace-dialog {
   width: min(460px, 100%);
+  max-height: 76vh;
+  overflow-y: auto;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -3426,7 +3428,6 @@ button {
   .workspace-dialog {
     width: 100%;
     max-height: 90svh;
-    overflow-y: auto;
     border-radius: 8px 8px 0 0;
   }
   .agent-task-header {
@@ -3923,4 +3924,54 @@ button {
   font: 400 11px/1.5 var(--mono, monospace);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+.disclosure-section {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.disclosure-section.is-open {
+  background: var(--surface);
+}
+.disclosure-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
+  background: transparent;
+  color: var(--text-1);
+  font: 600 12px var(--sans);
+  text-align: left;
+  cursor: pointer;
+}
+.disclosure-chevron {
+  flex: none;
+  color: var(--text-3);
+  transition: transform 0.15s ease;
+}
+.disclosure-section.is-open .disclosure-chevron {
+  transform: rotate(90deg);
+}
+.disclosure-label {
+  flex: none;
+}
+.disclosure-summary {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-3);
+  font-weight: 400;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.disclosure-panel {
+  display: grid;
+  gap: 12px;
+  padding: 4px 12px 14px;
+  border-top: 1px solid var(--line);
 }

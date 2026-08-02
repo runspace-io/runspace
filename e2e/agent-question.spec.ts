@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createLocalRepositoryFixture } from './local-repository';
+import { fillNewChannelResource, selectNewChannelAgent } from './channel-dialog';
 
 test.setTimeout(60_000);
 
@@ -128,8 +129,8 @@ async function openChannelWithAgent(page: Page) {
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByRole('heading', { name: 'Create channel' })).toBeVisible();
   await dialog.getByLabel('Channel name').fill(channelName);
-  await dialog.getByLabel('Connect new resource').fill(repositoryURL);
-  await dialog.getByLabel('Agent runtime').selectOption('mock');
+  await fillNewChannelResource(dialog, repositoryURL);
+  await selectNewChannelAgent(dialog, 'mock');
   await dialog.getByRole('button', { name: 'Create channel' }).click();
   await page.getByRole('button', { name: `Open ${channelName}` }).click();
   const context = page.getByRole('complementary', { name: 'Channel context' });

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { createLocalRepositoryFixture, restartGateway } from './local-repository';
 import { sendCollaboratorMessage } from './collaboration';
+import { fillNewChannelResource, selectNewChannelAgent } from './channel-dialog';
 
 test.setTimeout(60_000);
 
@@ -44,8 +45,8 @@ test('local admin can build and collaborate in a channel', async ({ page, browse
   const channelDialog = page.getByRole('dialog');
   await expect(channelDialog.getByRole('heading', { name: 'Create channel' })).toBeVisible();
   await channelDialog.getByLabel('Channel name').fill(channelName);
-  await channelDialog.getByLabel('Connect new resource').fill(repositoryURL);
-  await channelDialog.getByLabel('Agent runtime').selectOption('mock');
+  await fillNewChannelResource(channelDialog, repositoryURL);
+  await selectNewChannelAgent(channelDialog, 'mock');
   const repositoryConnected = page.waitForResponse(
     (response) => response.url().endsWith('/resources') && response.request().method() === 'POST',
   );

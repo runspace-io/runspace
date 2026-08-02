@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { GitBranch, Network, X } from 'lucide-react';
 import type { RepositorySummary } from '@/lib/workspace-state';
 import { validateChannelDraft, type ChannelDraft } from './channel-model';
 import { useModalFocus } from './use-modal-focus';
+import { DisclosureSection } from './disclosure-section';
 
 export function ChannelDialog({
   parentName,
@@ -79,45 +80,15 @@ export function ChannelDialog({
               placeholder="engineering"
             />
           </Field>
-          <Field
-            label="Resources"
-            hint={
-              parentName
-                ? 'Leave inherited to use the parent resources.'
-                : 'Optional until code access is needed.'
-            }
-          >
-            <div className="field-icon-control">
-              <GitBranch size={15} />
-              <select
-                value={repositoryIDs}
-                onChange={(event) => {
-                  const values = Array.from(event.target.selectedOptions, (option) => option.value);
-                  setRepositoryIDs(values);
-                }}
-                multiple
-              >
-                {repositories.length === 0 && (
-                  <option value="">
-                    {parentName ? 'Inherited from parent' : 'No resources connected'}
-                  </option>
-                )}
-                {repositories.map((repository) => (
-                  <option key={repository.id} value={repository.id}>
-                    {repository.fullName}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </Field>
-          <Field label="Connect new resource" hint="GitHub HTTPS URL or a mounted file:// path.">
-            <input
-              value={repositoryURL}
-              onChange={(event) => setRepositoryURL(event.target.value)}
-              placeholder="https://github.com/org/repository"
-            />
-          </Field>
-          <AgentRuntimeFields
+          <ResourceSection
+            parentName={parentName}
+            repositories={repositories}
+            repositoryIDs={repositoryIDs}
+            repositoryURL={repositoryURL}
+            onRepositoryIDsChange={setRepositoryIDs}
+            onRepositoryURLChange={setRepositoryURL}
+          />
+          <AgentSection
             inherited={Boolean(parentName)}
             protocol={agentProtocol}
             command={agentCommand}
@@ -139,7 +110,85 @@ export function ChannelDialog({
   );
 }
 
-function AgentRuntimeFields({
+function ResourceSection({
+  parentName,
+  repositories,
+  repositoryIDs,
+  repositoryURL,
+  onRepositoryIDsChange,
+  onRepositoryURLChange,
+}: {
+  parentName: string | undefined;
+  repositories: readonly RepositorySummary[];
+  repositoryIDs: string[];
+  repositoryURL: string;
+  onRepositoryIDsChange: (ids: string[]) => void;
+  onRepositoryURLChange: (value: string) => void;
+}) {
+  const summary = useMemo(
+    () => resourceSummary(parentName, repositories, repositoryIDs, repositoryURL),
+    [parentName, repositories, repositoryIDs, repositoryURL],
+  );
+  return (
+    <DisclosureSection
+      label="Resources"
+      summary={summary}
+      defaultOpen={repositoryIDs.length > 0 || repositoryURL.trim() !== ''}
+    >
+      {repositories.length > 0 && (
+        <Field
+          label="Existing resources"
+          hint={parentName ? 'Leave empty to use the parent resources.' : 'Optional.'}
+        >
+          <div className="field-icon-control">
+            <GitBranch size={15} />
+            <select
+              value={repositoryIDs}
+              onChange={(event) => {
+                const values = Array.from(event.target.selectedOptions, (option) => option.value);
+                onRepositoryIDsChange(values);
+              }}
+              multiple
+            >
+              {repositories.map((repository) => (
+                <option key={repository.id} value={repository.id}>
+                  {repository.fullName}
+                </option>
+              ))}
+            </select>
+          </div>
+        </Field>
+      )}
+      <Field
+        label="Connect a new Git resource"
+        hint="A GitHub HTTPS URL, cloned into the shared workspace checkout. A local agent
+          on your own device needs its own folder connected separately, after the channel exists."
+      >
+        <input
+          value={repositoryURL}
+          onChange={(event) => onRepositoryURLChange(event.target.value)}
+          placeholder="https://github.com/org/repository"
+        />
+      </Field>
+    </DisclosureSection>
+  );
+}
+
+function resourceSummary(
+  parentName: string | undefined,
+  repositories: readonly RepositorySummary[],
+  repositoryIDs: string[],
+  repositoryURL: string,
+): string {
+  if (repositoryURL.trim()) return 'Connecting a new resource';
+  if (repositoryIDs.length === 1) return '1 resource selected';
+  if (repositoryIDs.length > 1) return `${repositoryIDs.length} resources selected`;
+  if (parentName) return 'Inherits from parent';
+  if (repositories.length === 0) return 'None yet — optional';
+  return 'Not connected';
+}
+
+function AgentSection({
   inherited,
   protocol,
   command,
@@ -153,13 +202,17 @@ function AgentRuntimeFields({
   onCommandChange: (command: string) => void;
 }) {
   return (
-    <>
+    <DisclosureSection
+      label="Agent runtime"
+      summary={agentSummary(inherited, protocol)}
+      defaultOpen={protocol !== 'none'}
+    >
       <Field
-        label="Agent runtime"
+        label="Runtime"
         hint={
           inherited
             ? 'Leave inherited to use the parent agent.'
-            : 'Choose an explicit runtime for agent mode.'
+            : 'You can also connect an agent from the channel later.'
         }
       >
         <div className="field-icon-control">
@@ -172,7 +225,7 @@ function AgentRuntimeFields({
           >
             <option value="none">{inherited ? 'Inherit from parent' : 'No agent'}</option>
             <option value="mock">Built-in development agent</option>
-            <option value="acp">ACP command</option>
+            <option value="acp">ACP command (advanced)</option>
           </select>
         </div>
       </Field>
@@ -185,8 +238,14 @@ function AgentRuntimeFields({
           />
         </Field>
       )}
-    </>
+    </DisclosureSection>
   );
+}
+
+function agentSummary(inherited: boolean, protocol: ChannelDraft['agentProtocol']): string {
+  if (protocol === 'mock') return 'Built-in development agent';
+  if (protocol === 'acp') return 'ACP command';
+  return inherited ? 'Inherits from parent' : 'No agent — optional';
 }
 
 function Field({ label, hint, children }: { label: string; hint: string; children: ReactNode }) {

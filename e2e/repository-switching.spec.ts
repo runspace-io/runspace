@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createHostFolderFixture, createLocalRepositoryFixture } from './local-repository';
+import { fillNewChannelResource } from './channel-dialog';
 
 test.setTimeout(60_000);
 
@@ -125,7 +126,7 @@ async function createChannel(page: Page, name: string, repositoryURL: string) {
   await page.getByRole('button', { name: 'Add channel' }).click();
   const dialog = page.getByRole('dialog');
   await dialog.getByLabel('Channel name').fill(name);
-  await dialog.getByLabel('Connect new resource').fill(repositoryURL);
+  await fillNewChannelResource(dialog, repositoryURL);
   await dialog.getByRole('button', { name: 'Create channel' }).click();
   await page.getByRole('button', { name: `Open ${name}` }).click();
   await expect(page.getByRole('complementary', { name: 'Channel context' })).toBeVisible();
