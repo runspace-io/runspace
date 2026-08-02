@@ -24,12 +24,26 @@ type Authorizer interface {
 }
 
 type Thread struct {
-	ID          string    `json:"id"`
-	WorkspaceID string    `json:"workspace_id"`
-	ChannelID   string    `json:"channel_id,omitempty"`
-	Title       string    `json:"title"`
-	CreatedBy   string    `json:"created_by"`
-	CreatedAt   time.Time `json:"created_at"`
+	ID              string    `json:"id"`
+	WorkspaceID     string    `json:"workspace_id"`
+	ChannelID       string    `json:"channel_id,omitempty"`
+	ParentThreadID  string    `json:"parent_thread_id,omitempty"`
+	ParentMessageID string    `json:"parent_message_id,omitempty"`
+	Visibility      string    `json:"visibility"`
+	Title           string    `json:"title"`
+	CreatedBy       string    `json:"created_by"`
+	CreatedAt       time.Time `json:"created_at"`
+}
+
+const (
+	ThreadVisibilityPublic  = "public"
+	ThreadVisibilityPrivate = "private"
+)
+
+// HiddenFrom reports whether this thread must be hidden from viewerID: a
+// private thread is visible only to the member who created it.
+func (t Thread) HiddenFrom(viewerID string) bool {
+	return t.Visibility == ThreadVisibilityPrivate && t.CreatedBy != viewerID
 }
 
 // Channel is a workspace conversation. A child channel inherits repository
@@ -65,6 +79,16 @@ type Service interface {
 	ListThreads(context.Context, string, string) ([]Thread, error)
 	CreateMessage(context.Context, string, string, string, string, string) (Message, error)
 	ListMessages(context.Context, string, string, string) ([]Message, error)
+	// CreateMessageThread starts (or returns the existing) subthread anchored
+	// to a message within parentThreadID. visibility is "public" or "private".
+	CreateMessageThread(ctx context.Context, userID, workspaceID, parentThreadID, parentMessageID, visibility string) (Thread, error)
+	// ListMessageThreads lists every subthread anchored to a message inside
+	// parentThreadID that userID may see: every public one, plus userID's own
+	// private ones.
+	ListMessageThreads(ctx context.Context, userID, workspaceID, parentThreadID string) ([]Thread, error)
+	// ListPrivateThreads lists every private subthread userID created, across
+	// the whole workspace, for the viewer's private-threads tab.
+	ListPrivateThreads(ctx context.Context, userID, workspaceID string) ([]Thread, error)
 }
 
 // Store is the durable chat boundary. PostgreSQL implementations may be
@@ -74,6 +98,12 @@ type Store interface {
 	ListThreads(context.Context, string, string) ([]Thread, error)
 	CreateMessage(context.Context, Message) error
 	ListMessages(context.Context, string, string, string) ([]Message, error)
+	// ListThreadsByParentThreadID returns every subthread whose ParentThreadID
+	// matches, regardless of visibility; the service layer filters by viewer.
+	ListThreadsByParentThreadID(ctx context.Context, workspaceID, parentThreadID string) ([]Thread, error)
+	// ListThreadsByCreator returns every thread of the given visibility that
+	// userID created, across the workspace.
+	ListThreadsByCreator(ctx context.Context, workspaceID, userID, visibility string) ([]Thread, error)
 }
 
 type ChannelStore interface {
@@ -220,7 +250,9 @@ func (s *MemoryService) ListThreads(ctx context.Context, userID, workspaceID str
 	}
 	result := make([]Thread, 0)
 	for _, thread := range s.threads {
-		if thread.WorkspaceID == workspaceID {
+		// Subthreads (ParentThreadID set) are reached through
+		// ListMessageThreads/ListPrivateThreads, not the channel-thread list.
+		if thread.WorkspaceID == workspaceID && thread.ParentThreadID == "" {
 			result = append(result, thread)
 		}
 	}

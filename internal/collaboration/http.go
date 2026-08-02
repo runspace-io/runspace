@@ -28,6 +28,9 @@ func (h *Handler) RegisterRoutes(router chi.Router) {
 	router.Patch("/workspaces/{workspaceID}/channels/{channelID}", h.updateChannel)
 	router.Get("/threads/{threadID}/messages", h.listMessages)
 	router.Post("/threads/{threadID}/messages", h.createMessage)
+	router.Get("/threads/{threadID}/message-threads", h.listMessageThreads)
+	router.Post("/threads/{threadID}/messages/{messageID}/thread", h.createMessageThread)
+	router.Get("/workspaces/{workspaceID}/private-threads", h.listPrivateThreads)
 }
 
 type threadRequest struct {
@@ -51,6 +54,11 @@ type messageRequest struct {
 	WorkspaceID string `json:"workspace_id"`
 	Body        string `json:"body"`
 	ActorType   string `json:"actor_type"`
+}
+
+type messageThreadRequest struct {
+	WorkspaceID string `json:"workspace_id"`
+	Visibility  string `json:"visibility"`
 }
 
 func collaborationUserID(request *http.Request) string {
@@ -178,4 +186,44 @@ func (h *Handler) createMessage(writer http.ResponseWriter, request *http.Reques
 		return
 	}
 	writeCollaborationJSON(writer, http.StatusCreated, message)
+}
+
+func (h *Handler) listMessageThreads(writer http.ResponseWriter, request *http.Request) {
+	threads, err := h.service.ListMessageThreads(
+		request.Context(), collaborationUserID(request),
+		request.URL.Query().Get("workspace_id"), chi.URLParam(request, "threadID"),
+	)
+	if err != nil {
+		writeCollaborationError(writer, err)
+		return
+	}
+	writeCollaborationJSON(writer, http.StatusOK, map[string]any{"threads": threads})
+}
+
+func (h *Handler) createMessageThread(writer http.ResponseWriter, request *http.Request) {
+	var payload messageThreadRequest
+	if err := decodeCollaborationBody(request, &payload); err != nil {
+		writeCollaborationError(writer, err)
+		return
+	}
+	thread, err := h.service.CreateMessageThread(
+		request.Context(), collaborationUserID(request), payload.WorkspaceID,
+		chi.URLParam(request, "threadID"), chi.URLParam(request, "messageID"), payload.Visibility,
+	)
+	if err != nil {
+		writeCollaborationError(writer, err)
+		return
+	}
+	writeCollaborationJSON(writer, http.StatusCreated, thread)
+}
+
+func (h *Handler) listPrivateThreads(writer http.ResponseWriter, request *http.Request) {
+	threads, err := h.service.ListPrivateThreads(
+		request.Context(), collaborationUserID(request), chi.URLParam(request, "workspaceID"),
+	)
+	if err != nil {
+		writeCollaborationError(writer, err)
+		return
+	}
+	writeCollaborationJSON(writer, http.StatusOK, map[string]any{"threads": threads})
 }

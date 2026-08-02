@@ -103,6 +103,10 @@ function ResourcePopover({
       )}
     >
       <h2 className="header-popover-heading">Resources</h2>
+      <p className="header-popover-scope">
+        Workspace-owned, not this channel&apos;s — using one here doesn&apos;t take it away from
+        other channels.
+      </p>
       {repositories.length > 0 ? (
         <div className="context-option-list">
           {repositories.map((repository) => {
@@ -208,6 +212,10 @@ function AgentPopover({
       )}
     >
       <h2 className="header-popover-heading">Agent</h2>
+      <p className="header-popover-scope">
+        Yours, not this channel&apos;s — installed on your device, usable in any channel you&apos;re
+        in.
+      </p>
       <div className="agent-summary">
         <span className="context-option-icon">
           <Bot size={16} />

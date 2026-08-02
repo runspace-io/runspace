@@ -36,8 +36,12 @@ func (s *MemoryService) createMessageAs(
 	if err := s.authorizer.CanWrite(ctx, workspaceID, callerID); err != nil {
 		return Message{}, err
 	}
-	if _, err := s.resolveThread(ctx, callerID, workspaceID, threadID); err != nil {
+	thread, err := s.resolveThread(ctx, callerID, workspaceID, threadID)
+	if err != nil {
 		return Message{}, err
+	}
+	if thread.HiddenFrom(callerID) {
+		return Message{}, ErrNotFound
 	}
 	s.mu.Lock()
 	store := s.store
@@ -102,7 +106,7 @@ func (s *MemoryService) ListMessages(ctx context.Context, userID, workspaceID, t
 		}
 	}
 	thread, ok := s.threads[threadID]
-	if !ok || thread.WorkspaceID != workspaceID {
+	if !ok || thread.WorkspaceID != workspaceID || thread.HiddenFrom(userID) {
 		return nil, ErrNotFound
 	}
 	return ensureMessages(s.messages[threadID]), nil

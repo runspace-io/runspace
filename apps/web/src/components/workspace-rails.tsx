@@ -119,43 +119,66 @@ export function LeftRail({
         ))}
         {channels.length === 0 && <span className="empty-state">No channels yet</span>}
       </div>
-      {tree.length > 0 && (
-        <>
-          <div className="rail-section-header">
-            <span>Files</span>
-            <PanelLeft size={14} />
-          </div>
-          <div className="file-tree resource-tree" role="tree" aria-label="Resource files">
-            {tree.map((entry) => (
-              <button
-                className={`tree-item ${selectedFilePath === entry.path ? 'active' : ''}`}
-                role="treeitem"
-                style={{ paddingLeft: `${12 + (entry.path.split('/').length - 1) * 16}px` }}
-                key={entry.path}
-                aria-expanded={
-                  entry.kind === 'directory' ? expandedDirectories.includes(entry.path) : undefined
-                }
-                aria-selected={selectedFilePath === entry.path}
-                onClick={() =>
-                  entry.kind === 'file' ? onSelectFile(entry.path) : onToggleDirectory(entry.path)
-                }
-              >
-                {entry.kind === 'directory' ? (
-                  expandedDirectories.includes(entry.path) ? (
-                    <ChevronDown size={13} />
-                  ) : (
-                    <ChevronRight size={13} />
-                  )
-                ) : (
-                  <FileCode2 size={14} />
-                )}
-                <span>{entry.path.split('/').at(-1)}</span>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
+      <ResourceFileTree
+        tree={tree}
+        expandedDirectories={expandedDirectories}
+        selectedFilePath={selectedFilePath}
+        onSelectFile={onSelectFile}
+        onToggleDirectory={onToggleDirectory}
+      />
     </aside>
+  );
+}
+
+function ResourceFileTree({
+  tree,
+  expandedDirectories,
+  selectedFilePath,
+  onSelectFile,
+  onToggleDirectory,
+}: {
+  tree: readonly WorkspaceTreeEntry[];
+  expandedDirectories: readonly string[];
+  selectedFilePath?: string | undefined;
+  onSelectFile: (path: string) => void;
+  onToggleDirectory: (path: string) => void;
+}) {
+  if (tree.length === 0) return null;
+  return (
+    <>
+      <div className="rail-section-header">
+        <span>Files</span>
+        <PanelLeft size={14} />
+      </div>
+      <div className="file-tree resource-tree" role="tree" aria-label="Resource files">
+        {tree.map((entry) => (
+          <button
+            className={`tree-item ${selectedFilePath === entry.path ? 'active' : ''}`}
+            role="treeitem"
+            style={{ paddingLeft: `${12 + (entry.path.split('/').length - 1) * 16}px` }}
+            key={entry.path}
+            aria-expanded={
+              entry.kind === 'directory' ? expandedDirectories.includes(entry.path) : undefined
+            }
+            aria-selected={selectedFilePath === entry.path}
+            onClick={() =>
+              entry.kind === 'file' ? onSelectFile(entry.path) : onToggleDirectory(entry.path)
+            }
+          >
+            {entry.kind === 'directory' ? (
+              expandedDirectories.includes(entry.path) ? (
+                <ChevronDown size={13} />
+              ) : (
+                <ChevronRight size={13} />
+              )
+            ) : (
+              <FileCode2 size={14} />
+            )}
+            <span>{entry.path.split('/').at(-1)}</span>
+          </button>
+        ))}
+      </div>
+    </>
   );
 }
 

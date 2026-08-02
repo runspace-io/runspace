@@ -125,6 +125,24 @@ func (r *recordingChatStore) CreateMessage(_ context.Context, item Message) erro
 func (r *recordingChatStore) ListMessages(context.Context, string, string, string) ([]Message, error) {
 	return append([]Message(nil), r.messages...), nil
 }
+func (r *recordingChatStore) ListThreadsByParentThreadID(_ context.Context, _, parentThreadID string) ([]Thread, error) {
+	out := make([]Thread, 0)
+	for _, thread := range r.threads {
+		if thread.ParentThreadID == parentThreadID {
+			out = append(out, thread)
+		}
+	}
+	return out, nil
+}
+func (r *recordingChatStore) ListThreadsByCreator(_ context.Context, _, userID, visibility string) ([]Thread, error) {
+	out := make([]Thread, 0)
+	for _, thread := range r.threads {
+		if thread.CreatedBy == userID && thread.Visibility == visibility && thread.ParentMessageID != "" {
+			out = append(out, thread)
+		}
+	}
+	return out, nil
+}
 
 func TestStoreWriteThrough(t *testing.T) {
 	store := &recordingChatStore{}

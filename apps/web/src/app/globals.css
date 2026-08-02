@@ -1286,6 +1286,12 @@ button:active:not(:disabled) {
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
+.header-popover-scope {
+  margin: -4px 0 0;
+  color: var(--text-3);
+  font-size: 11px;
+  line-height: 1.5;
+}
 .resource-center-nav {
   display: grid;
   grid-template-columns: 24px minmax(0, 1fr);
@@ -1323,7 +1329,7 @@ button:active:not(:disabled) {
 }
 .resource-center-header {
   display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) 32px;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
   gap: 12px;
   align-items: start;
   padding-bottom: 18px;
@@ -1360,6 +1366,18 @@ button:active:not(:disabled) {
   align-items: center;
   display: inline-flex;
   gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font: 500 12px var(--sans);
+  white-space: nowrap;
+}
+.resource-center-actions .secondary-button:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--surface-3);
 }
 
 .capability-fields {
@@ -1591,6 +1609,9 @@ button:active:not(:disabled) {
 }
 .resource-card-icon[data-kind='action'] {
   color: var(--amber);
+}
+.resource-card-icon[data-kind='agent'] {
+  color: var(--accent);
 }
 .resource-card-copy {
   display: grid;

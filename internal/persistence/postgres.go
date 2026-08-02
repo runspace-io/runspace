@@ -225,46 +225,6 @@ func (s *Store) checkMembership(ctx context.Context, workspaceID, userID string,
 	return nil
 }
 
-func (s *Store) CreateThread(ctx context.Context, thread collaboration.Thread) error {
-	_, err := s.db.ExecContext(ctx, `INSERT INTO threads (id,workspace_id,channel_id,title,created_by,created_at) VALUES ($1,$2,NULLIF($3,''),$4,$5,$6)`, thread.ID, thread.WorkspaceID, thread.ChannelID, thread.Title, thread.CreatedBy, thread.CreatedAt)
-	return err
-}
-func (s *Store) ListThreads(ctx context.Context, userID, workspaceID string) ([]collaboration.Thread, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT t.id,t.workspace_id,COALESCE(t.channel_id,''),t.title,t.created_by,t.created_at FROM threads t JOIN workspace_members m ON m.workspace_id=t.workspace_id WHERE t.workspace_id=$1 AND m.user_id=$2 ORDER BY t.created_at`, workspaceID, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = rows.Close() }()
-	var out []collaboration.Thread
-	for rows.Next() {
-		var item collaboration.Thread
-		if err := rows.Scan(&item.ID, &item.WorkspaceID, &item.ChannelID, &item.Title, &item.CreatedBy, &item.CreatedAt); err != nil {
-			return nil, err
-		}
-		out = append(out, item)
-	}
-	return out, rows.Err()
-}
-func (s *Store) CreateMessage(ctx context.Context, message collaboration.Message) error {
-	_, err := s.db.ExecContext(ctx, `INSERT INTO thread_messages (id,thread_id,actor_id,actor_type,body,created_at) VALUES ($1,$2,$3,$4,$5,$6)`, message.ID, message.ThreadID, message.ActorID, message.ActorType, message.Body, message.CreatedAt)
-	return err
-}
-func (s *Store) ListMessages(ctx context.Context, userID, workspaceID, threadID string) ([]collaboration.Message, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT m.id,m.thread_id,m.actor_id,m.actor_type,m.body,m.created_at FROM thread_messages m JOIN threads t ON t.id=m.thread_id JOIN workspace_members wm ON wm.workspace_id=t.workspace_id WHERE t.workspace_id=$1 AND t.id=$2 AND wm.user_id=$3 ORDER BY m.created_at`, workspaceID, threadID, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = rows.Close() }()
-	out := make([]collaboration.Message, 0)
-	for rows.Next() {
-		var item collaboration.Message
-		if err := rows.Scan(&item.ID, &item.ThreadID, &item.ActorID, &item.ActorType, &item.Body, &item.CreatedAt); err != nil {
-			return nil, err
-		}
-		out = append(out, item)
-	}
-	return out, rows.Err()
-}
 func (s *Store) CreateChannelMessage(ctx context.Context, m Message) error {
 	_, err := s.db.ExecContext(ctx, `INSERT INTO messages (id,channel_id,author_id,body,created_at) VALUES ($1,$2,$3,$4,$5)`, m.ID, m.ChannelID, m.AuthorID, m.Body, m.CreatedAt)
 	return err
@@ -287,6 +247,12 @@ CREATE TABLE IF NOT EXISTS runs (id text PRIMARY KEY, workspace_id text NOT NULL
 CREATE TABLE IF NOT EXISTS run_outputs (id text PRIMARY KEY, run_id text NOT NULL REFERENCES runs(id) ON DELETE CASCADE, kind text NOT NULL, text text NOT NULL, sequence bigint NOT NULL, created_at timestamptz NOT NULL);
 ALTER TABLE threads ADD COLUMN IF NOT EXISTS channel_id text REFERENCES channels(id) ON DELETE CASCADE;
 CREATE TABLE IF NOT EXISTS thread_messages (id text PRIMARY KEY, thread_id text NOT NULL REFERENCES threads(id) ON DELETE CASCADE, actor_id text NOT NULL, actor_type text NOT NULL, body text NOT NULL, created_at timestamptz NOT NULL);
+ALTER TABLE threads ADD COLUMN IF NOT EXISTS parent_thread_id text REFERENCES threads(id) ON DELETE CASCADE;
+ALTER TABLE threads ADD COLUMN IF NOT EXISTS parent_message_id text REFERENCES thread_messages(id) ON DELETE CASCADE;
+ALTER TABLE threads ADD COLUMN IF NOT EXISTS visibility text NOT NULL DEFAULT 'public';
+CREATE INDEX IF NOT EXISTS threads_parent_thread_id_idx ON threads(parent_thread_id) WHERE parent_thread_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS threads_public_parent_message_key ON threads(parent_message_id) WHERE parent_message_id IS NOT NULL AND visibility='public';
+CREATE UNIQUE INDEX IF NOT EXISTS threads_private_parent_message_creator_key ON threads(parent_message_id,created_by) WHERE parent_message_id IS NOT NULL AND visibility='private';
 CREATE TABLE IF NOT EXISTS channel_secrets (channel_id text NOT NULL REFERENCES channels(id) ON DELETE CASCADE, name text NOT NULL, sealed bytea NOT NULL, updated_at timestamptz NOT NULL, PRIMARY KEY(channel_id,name));
 CREATE TABLE IF NOT EXISTS user_agent_metadata (owner_id text NOT NULL, id text NOT NULL, registry_id text NOT NULL, name text NOT NULL, description text NOT NULL DEFAULT '', protocol text NOT NULL, placement text NOT NULL, status text NOT NULL, capabilities jsonb NOT NULL DEFAULT '[]'::jsonb, updated_at timestamptz NOT NULL, PRIMARY KEY(owner_id,id));
 CREATE TABLE IF NOT EXISTS agent_tasks (id text PRIMARY KEY, workspace_id text NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE, thread_id text NOT NULL REFERENCES threads(id) ON DELETE CASCADE, owner_id text NOT NULL, agent_id text NOT NULL, resource_id text NOT NULL, title text NOT NULL, status text NOT NULL, created_at timestamptz NOT NULL, updated_at timestamptz NOT NULL);

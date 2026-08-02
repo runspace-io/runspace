@@ -29,7 +29,7 @@ export type ApiAgentInstallation = {
   protocol: 'acp';
   placement: 'host';
   status: string;
-  capabilities: string[];
+  capabilities: string[] | null;
   updated_at: string;
 };
 
@@ -37,7 +37,12 @@ export type ApiThread = {
   id: string;
   workspace_id: string;
   channel_id?: string;
+  /** Set when this thread is a subthread anchored to a message, not a channel's root thread. */
+  parent_thread_id?: string;
+  parent_message_id?: string;
+  visibility: 'public' | 'private';
   title: string;
+  created_by: string;
 };
 
 export type ApiChannel = {
