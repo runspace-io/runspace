@@ -49,7 +49,7 @@ func parseStringSlice(value []byte) []string {
 func New(db *sql.DB) *Store { return &Store{db: db} }
 
 func (s *Store) Migrate(ctx context.Context) error {
-	_, err := s.db.ExecContext(ctx, schema+graphSchema+taskMessageSchema+taskQuestionSchema)
+	_, err := s.db.ExecContext(ctx, schema+graphSchema+taskMessageSchema+taskQuestionSchema+invitationSchema)
 	return err
 }
 func (s *Store) CreateWorkspace(ctx context.Context, w Workspace) error {

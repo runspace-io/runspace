@@ -117,6 +117,25 @@ export type ApiAgentTaskMessage = {
   created_at: string;
 };
 
+export type ApiInvitation = {
+  id: string;
+  workspace_id: string;
+  role: 'admin' | 'member' | 'viewer';
+  created_by: string;
+  expires_at: string;
+  accepted_by?: string;
+  accepted_at?: string;
+  created_at: string;
+};
+
+/** What a link holder may see before deciding to join. */
+export type ApiInvitationPreview = {
+  workspace_id: string;
+  workspace_name: string;
+  role: ApiInvitation['role'];
+  invited_by: string;
+};
+
 export type ApiQuestionOption = {
   id: string;
   name: string;

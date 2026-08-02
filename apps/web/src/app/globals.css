@@ -3848,3 +3848,63 @@ button {
     border-bottom: 1px solid var(--line);
   }
 }
+
+.invite-page {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 24px;
+  background: var(--bg);
+}
+.invite-card {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  width: min(420px, 100%);
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.invite-card h1 {
+  margin: 0;
+  font-size: 19px;
+}
+.invite-card p {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 13px;
+}
+.invite-link {
+  display: grid;
+  gap: 10px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+.invite-link-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.invite-link-result {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.invite-link-result input {
+  flex: 1 1 220px;
+  min-width: 0;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--text-1);
+  background: var(--surface-2);
+  font: 400 11px var(--mono, monospace);
+}
+.invite-link-result small {
+  flex: 1 1 100%;
+  color: var(--text-3);
+  font-size: 10px;
+}

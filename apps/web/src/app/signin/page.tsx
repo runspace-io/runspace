@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { getProviders, signIn } from 'next-auth/react';
 import Image from 'next/image';
+import { safeCallbackUrl } from './callback-url';
 
 export default function SignInPage() {
   const [username, setUsername] = useState('admin');
@@ -10,8 +11,10 @@ export default function SignInPage() {
   const [githubAvailable, setGithubAvailable] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string>();
+  const [callbackUrl, setCallbackUrl] = useState('/');
   useEffect(() => {
     void getProviders().then((providers) => setGithubAvailable(Boolean(providers?.github)));
+    setCallbackUrl(safeCallbackUrl());
   }, []);
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -21,14 +24,14 @@ export default function SignInPage() {
       username,
       password,
       redirect: false,
-      callbackUrl: '/',
+      callbackUrl,
     });
     setSubmitting(false);
     if (!result?.ok) {
       setError('Invalid username or password.');
       return;
     }
-    window.location.assign(result.url ?? '/');
+    window.location.assign(result.url ?? callbackUrl);
   };
   return (
     <main className="auth-page">
@@ -63,7 +66,7 @@ export default function SignInPage() {
           <button
             className="quiet-button local-auth-button"
             type="button"
-            onClick={() => void signIn('github', { callbackUrl: '/' })}
+            onClick={() => void signIn('github', { callbackUrl })}
           >
             Continue with GitHub <span>→</span>
           </button>

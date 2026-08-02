@@ -6,9 +6,9 @@ import type {
   ApiResourcePlugin,
   ApiUIDocument,
 } from './api-types';
-import { AgentTaskApiClient } from './agent-task-api-client';
+import { InvitationApiClient } from './invitation-api-client';
 
-export class GraphApiClient extends AgentTaskApiClient {
+export class GraphApiClient extends InvitationApiClient {
   public requestUIAction(
     workspaceID: string,
     input: {

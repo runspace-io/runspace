@@ -43,6 +43,7 @@ func (h *Handler) RegisterRoutes(r chi.Router) {
 	r.Post("/workspaces/{workspaceID}/repositories", h.connectRepository)
 	r.Post("/workspaces/{workspaceID}/members", h.addMember)
 	r.Get("/workspaces/{workspaceID}/members", h.listMembers)
+	h.registerInvitationRoutes(r)
 }
 
 type workspaceRequest = CreateWorkspaceRequest

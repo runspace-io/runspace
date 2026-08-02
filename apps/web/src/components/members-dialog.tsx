@@ -5,6 +5,7 @@ import { ShieldCheck, UserPlus, X } from 'lucide-react';
 import { WorkspaceApiClient, type ApiMember } from '@/lib/api-client';
 import type { WorkspaceSummary } from '@/lib/workspace-state';
 import { useModalFocus } from './use-modal-focus';
+import { InviteLink } from './invite-link';
 
 export function MembersDialog({
   api,
@@ -81,6 +82,7 @@ export function MembersDialog({
           ))}
           {members.length === 0 && <p className="empty-state">No members returned</p>}
         </div>
+        <InviteLink api={api} workspaceID={workspace.id} />
         <form className="member-form" onSubmit={add}>
           <label className="channel-field">
             <span>Member ID</span>
